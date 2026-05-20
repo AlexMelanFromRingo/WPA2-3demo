@@ -12,10 +12,12 @@ import { DEFAULT_DICTIONARY, DEFAULT_SECRET_PASSWORD } from '../../core/crypto/h
 import type { AttackType, ModuleId, VisualizationStep } from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
+import { MODULE_THEORY } from '../../core/theory';
 import { ControlPanel } from '../control-panel/control-panel';
 import { validateScenario } from '../handshake-visualizer/wpa2-validation';
 import { DataFlowDiagram } from '../shared/data-flow-diagram/data-flow-diagram';
 import { HexInspector } from '../shared/hex-inspector/hex-inspector';
+import { TheoryPanel } from '../shared/theory-panel/theory-panel';
 import { Tooltip } from '../shared/tooltip/tooltip';
 import { AttackSwitch } from './attack-switch/attack-switch';
 import { DictionaryEditor } from './dictionary-editor/dictionary-editor';
@@ -36,6 +38,7 @@ const MODULE: ModuleId = 'hashcat-22000';
     DataFlowDiagram,
     DictionaryEditor,
     HexInspector,
+    TheoryPanel,
     Tooltip,
   ],
   animations: [
@@ -47,12 +50,17 @@ const MODULE: ModuleId = 'hashcat-22000';
     ]),
   ],
   template: `
-    <section class="p-6">
+    <section class="mx-auto max-w-3xl p-4 sm:p-6">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-xl font-semibold text-slate-800">Модуль 3 — Симулятор Hashcat 22000</h2>
+        <div>
+          <h2 class="text-xl font-semibold text-slate-800">Модуль 3 — Симулятор Hashcat 22000</h2>
+          <p class="text-sm text-slate-500">
+            Как офлайн-перебор подбирает пароль Wi-Fi по перехваченному хэшу.
+          </p>
+        </div>
         <button
           type="button"
-          class="rounded px-3 py-1.5 text-sm font-medium"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
           [class.bg-sky-600]="fastMode()"
           [class.text-white]="fastMode()"
           [class.bg-slate-100]="!fastMode()"
@@ -63,10 +71,14 @@ const MODULE: ModuleId = 'hashcat-22000';
         </button>
       </div>
 
-      <div class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+      <div class="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
         ⚠ Это строго образовательная симуляция математики офлайн-атаки. Реального захвата
         трафика и сетевого взаимодействия не происходит — все вычисления идут только над
         данными, которые вы ввели сами.
+      </div>
+
+      <div class="mt-3">
+        <app-theory-panel [theory]="theory" />
       </div>
 
       <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -78,7 +90,7 @@ const MODULE: ModuleId = 'hashcat-22000';
       </div>
 
       @if (errors().length > 0) {
-        <div class="mt-4 rounded-lg border border-red-300 bg-red-50 p-4">
+        <div class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4">
           <p class="text-sm font-semibold text-red-800">Проверьте параметры:</p>
           <ul class="mt-1 list-disc pl-5 text-sm text-red-700">
             @for (error of errors(); track error) {
@@ -91,14 +103,14 @@ const MODULE: ModuleId = 'hashcat-22000';
           <app-control-panel [moduleId]="moduleId" />
 
           @if (computing()) {
-            <div class="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
+            <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
               ⏳ Идёт перебор словаря — для каждого слова по-настоящему считается PBKDF2,
               в фоновом потоке.
             </div>
           }
 
           @if (result(); as crack) {
-            <div class="rounded-lg border border-slate-700 bg-slate-900 p-3">
+            <div class="rounded-xl border border-slate-700 bg-slate-900 p-3">
               <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Строка хэша формата 22000
               </p>
@@ -111,14 +123,14 @@ const MODULE: ModuleId = 'hashcat-22000';
           @if (currentStep(); as step) {
             <article
               [@stepChange]="currentIndex()"
-              class="rounded-lg border border-slate-200 bg-white p-5"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div class="flex flex-wrap items-center gap-2">
                 <h3 class="text-lg font-semibold text-slate-800">{{ step.title }}</h3>
                 <app-tooltip [text]="step.tooltip">
                   <span
                     class="flex h-5 w-5 cursor-help items-center justify-center rounded-full
-                           bg-slate-300 text-xs font-bold text-slate-700"
+                           bg-slate-200 text-xs font-bold text-slate-600"
                   >
                     ?
                   </span>
@@ -136,13 +148,35 @@ const MODULE: ModuleId = 'hashcat-22000';
                     {{ badge.text }}
                   </span>
                 }
-                <span class="ml-auto text-xs text-slate-400">{{ progress() }}</span>
+                <span class="ml-auto text-xs font-medium text-slate-400">{{ progress() }}</span>
               </div>
 
-              <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ step.tooltip }}</p>
+              <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ step.description }}</p>
+
+              @if (step.formula) {
+                <div
+                  class="mt-3 overflow-x-auto rounded-lg border-l-4 border-sky-500 bg-sky-50 px-4 py-2.5"
+                >
+                  <code class="font-mono text-sm text-slate-800">{{ step.formula }}</code>
+                </div>
+              }
 
               <div class="mt-4">
-                <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Разбор терминов
+                </h4>
+                <dl class="flex flex-col gap-2 rounded-lg bg-slate-50 p-3">
+                  @for (term of step.terms; track term.term) {
+                    <div class="text-sm leading-relaxed">
+                      <dt class="inline font-semibold text-slate-800">{{ term.term }}</dt>
+                      <dd class="inline text-slate-600"> — {{ term.definition }}</dd>
+                    </div>
+                  }
+                </dl>
+              </div>
+
+              <div class="mt-4">
+                <h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Поток данных
                 </h4>
                 <app-data-flow-diagram [flow]="step.dataFlow" />
@@ -164,6 +198,7 @@ export class HashcatSim {
   private readonly stepController = inject(StepController);
 
   protected readonly moduleId = MODULE;
+  protected readonly theory = MODULE_THEORY[MODULE];
   protected readonly attackType = signal<AttackType>('pmkid');
   protected readonly words = signal<string[]>([...DEFAULT_DICTIONARY]);
   protected readonly secretPassword = signal<string>(DEFAULT_SECRET_PASSWORD);
