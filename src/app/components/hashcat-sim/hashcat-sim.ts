@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY } from 'rxjs';
 import { catchError, debounceTime, switchMap } from 'rxjs/operators';
@@ -15,10 +14,8 @@ import { StepController } from '../../core/state/step-controller.service';
 import { MODULE_THEORY } from '../../core/theory';
 import { ControlPanel } from '../control-panel/control-panel';
 import { validateScenario } from '../handshake-visualizer/wpa2-validation';
-import { DataFlowDiagram } from '../shared/data-flow-diagram/data-flow-diagram';
-import { HexInspector } from '../shared/hex-inspector/hex-inspector';
+import { StepCard } from '../shared/step-card/step-card';
 import { TheoryPanel } from '../shared/theory-panel/theory-panel';
-import { Tooltip } from '../shared/tooltip/tooltip';
 import { AttackSwitch } from './attack-switch/attack-switch';
 import { DictionaryEditor } from './dictionary-editor/dictionary-editor';
 import { buildHashcatSteps } from './hashcat-steps';
@@ -32,23 +29,7 @@ const MODULE: ModuleId = 'hashcat-22000';
  */
 @Component({
   selector: 'app-hashcat-sim',
-  imports: [
-    AttackSwitch,
-    ControlPanel,
-    DataFlowDiagram,
-    DictionaryEditor,
-    HexInspector,
-    TheoryPanel,
-    Tooltip,
-  ],
-  animations: [
-    trigger('stepChange', [
-      transition('* => *', [
-        style({ opacity: 0, transform: 'translateX(14px)' }),
-        animate('220ms ease-out', style({ opacity: 1, transform: 'translateX(0)' })),
-      ]),
-    ]),
-  ],
+  imports: [AttackSwitch, ControlPanel, DictionaryEditor, StepCard, TheoryPanel],
   template: `
     <section class="mx-auto max-w-3xl p-4 sm:p-6">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -104,88 +85,23 @@ const MODULE: ModuleId = 'hashcat-22000';
 
           @if (computing()) {
             <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
-              ⏳ Идёт перебор словаря — для каждого слова по-настоящему считается PBKDF2,
-              в фоновом потоке.
+              ⏳ Идёт перебор словаря — для каждого слова по-настоящему считается PBKDF2.
             </div>
           }
 
           @if (result(); as crack) {
-            <div class="rounded-xl border border-slate-700 bg-slate-900 p-3">
-              <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Строка хэша формата 22000
               </p>
-              <p class="mt-1 break-all font-mono text-xs text-emerald-300">
+              <p class="mt-1 break-all rounded bg-slate-100 p-2 font-mono text-xs text-slate-800">
                 {{ crack.hash22000Line }}
               </p>
             </div>
           }
 
           @if (currentStep(); as step) {
-            <article
-              [@stepChange]="currentIndex()"
-              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-lg font-semibold text-slate-800">{{ step.title }}</h3>
-                <app-tooltip [text]="step.tooltip">
-                  <span
-                    class="flex h-5 w-5 cursor-help items-center justify-center rounded-full
-                           bg-slate-200 text-xs font-bold text-slate-600"
-                  >
-                    ?
-                  </span>
-                </app-tooltip>
-                @if (step.badge; as badge) {
-                  <span
-                    class="rounded px-2 py-0.5 text-xs font-semibold"
-                    [class.bg-emerald-100]="badge.tone === 'match'"
-                    [class.text-emerald-800]="badge.tone === 'match'"
-                    [class.bg-red-100]="badge.tone === 'no-match'"
-                    [class.text-red-800]="badge.tone === 'no-match'"
-                    [class.bg-slate-100]="badge.tone === 'info'"
-                    [class.text-slate-700]="badge.tone === 'info'"
-                  >
-                    {{ badge.text }}
-                  </span>
-                }
-                <span class="ml-auto text-xs font-medium text-slate-400">{{ progress() }}</span>
-              </div>
-
-              <p class="mt-3 text-sm leading-relaxed text-slate-600">{{ step.description }}</p>
-
-              @if (step.formula) {
-                <div
-                  class="mt-3 overflow-x-auto rounded-lg border-l-4 border-sky-500 bg-sky-50 px-4 py-2.5"
-                >
-                  <code class="font-mono text-sm text-slate-800">{{ step.formula }}</code>
-                </div>
-              }
-
-              <div class="mt-4">
-                <h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Разбор терминов
-                </h4>
-                <dl class="flex flex-col gap-2 rounded-lg bg-slate-50 p-3">
-                  @for (term of step.terms; track term.term) {
-                    <div class="text-sm leading-relaxed">
-                      <dt class="inline font-semibold text-slate-800">{{ term.term }}</dt>
-                      <dd class="inline text-slate-600"> — {{ term.definition }}</dd>
-                    </div>
-                  }
-                </dl>
-              </div>
-
-              <div class="mt-4">
-                <h4 class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Поток данных
-                </h4>
-                <app-data-flow-diagram [flow]="step.dataFlow" />
-              </div>
-
-              <div class="mt-4">
-                <app-hex-inspector [artifacts]="step.artifacts" />
-              </div>
-            </article>
+            <app-step-card [step]="step" [progress]="progress()" />
           }
         </div>
       }

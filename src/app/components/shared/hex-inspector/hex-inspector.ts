@@ -26,7 +26,7 @@ import type { CryptoArtifact } from '../../../core/models';
                 {{ artifact.label }} · {{ artifact.bitLength }} бит
               </div>
               <pre
-                class="mt-1 overflow-x-auto rounded bg-slate-900 p-2 text-xs leading-relaxed text-emerald-300"
+                class="mt-1 overflow-x-auto rounded bg-slate-100 p-2 text-xs leading-relaxed text-slate-800"
                 >{{ dump(artifact) }}</pre
               >
             </div>

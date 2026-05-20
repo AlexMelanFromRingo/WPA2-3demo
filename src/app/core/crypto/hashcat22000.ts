@@ -57,6 +57,12 @@ export interface CandidateResult {
 /** Итог перебора. */
 export interface CrackResult {
   attackType: AttackType;
+  /** Имя сети сценария. */
+  ssid: string;
+  /** MAC точки доступа. */
+  apMac: string;
+  /** MAC клиента. */
+  clientMac: string;
   /** Перехваченный хэш (PMKID или MIC) в hex. */
   capturedHashHex: string;
   /** Строка формата 22000 для текущего сценария. */
@@ -124,6 +130,9 @@ export async function runCrack(params: CrackParams): Promise<CrackResult> {
 
   return {
     attackType: params.attackType,
+    ssid: params.ssid,
+    apMac: params.apMac,
+    clientMac: params.clientMac,
     capturedHashHex,
     hash22000Line: build22000Line(capturedHashHex, params),
     perWord,
