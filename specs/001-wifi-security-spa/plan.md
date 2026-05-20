@@ -17,7 +17,7 @@ UI-поток. Управление шагами — RxJS `BehaviorSubject` + An
 ## Technical Context
 
 **Language/Version**: TypeScript 5.9.x, Node.js 24.x LTS (только для сборки/тулинга)
-**Primary Dependencies**: Angular 21.2.x, Tailwind CSS 4.3.x, RxJS 7.8.x (peer от Angular), `@noble/curves` 1.x, `@noble/hashes` 1.x
+**Primary Dependencies**: Angular 21.2.12 (CLI/build 21.2.10), Tailwind CSS 4.3.0, RxJS 7.8.2 (peer от Angular), `@noble/curves` 2.2.0, `@noble/hashes` 2.2.0
 **Storage**: N/A — состояние только в памяти; данные не сохраняются между сессиями и не покидают браузер
 **Testing**: Встроенный в Angular 21 тест-раннер (на базе Vitest) — юнит-тесты криптокорректности против эталонных векторов; ручная проверка отзывчивости UI
 **Target Platform**: Современные desktop-браузеры (Chrome/Edge/Firefox/Safari) с поддержкой WebCrypto, Web Workers, ES2022
@@ -86,6 +86,7 @@ styles.css                      # Tailwind v4 (CSS-first конфигураци�
 src/
 ├── app/
 │   ├── core/
+│   │   ├── models.ts                    # Доменные типы (NetworkScenario, VisualizationStep, …)
 │   │   ├── crypto/                      # Криптодвижок (Web Worker + WebCrypto + @noble)
 │   │   │   ├── crypto.worker.ts         # Воркер: PBKDF2/HMAC/P-256
 │   │   │   ├── crypto-engine.service.ts # Фасад над воркером (Promise/Observable)
@@ -94,12 +95,17 @@ src/
 │   │   │   ├── hashcat22000.ts          # PMKID/EAPOL-перебор, сборка строки 22000
 │   │   │   └── hex.ts                   # Утилиты hex-дампов
 │   │   └── state/
-│   │       ├── scenario-state.service.ts # Единый общий сценарий (BehaviorSubject)
+│   │       ├── scenario-state.service.ts # Единый сценарий + кэш вычисленных значений
 │   │       └── step-controller.service.ts# Шаги + авто-проигрывание (play/pause)
 │   ├── components/
 │   │   ├── handshake-visualizer/        # Модуль 1 — WPA2 4-Way Handshake
+│   │   │   └── wpa2-steps.ts            # Модель шагов WPA2
 │   │   ├── sae-visualizer/              # Модуль 2 — WPA3 SAE (Dragonfly)
+│   │   │   └── sae-steps.ts             # Модель шагов SAE
 │   │   ├── hashcat-sim/                 # Модуль 3 — симулятор Hashcat 22000
+│   │   │   ├── hashcat-steps.ts         # Модель шагов перебора
+│   │   │   ├── attack-switch/           # Переключатель PMKID/EAPOL
+│   │   │   └── dictionary-editor/       # Редактор мини-словаря
 │   │   ├── control-panel/               # Шаг вперёд/назад, play/pause, скорость
 │   │   └── shared/
 │   │       ├── data-flow-diagram/       # Схема «вход → преобразование → выход»

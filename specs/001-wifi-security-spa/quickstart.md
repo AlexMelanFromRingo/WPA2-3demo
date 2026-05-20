@@ -17,8 +17,10 @@
 ```ini
 # Блокирует главный вектор атак — lifecycle-скрипты pre/post/install
 ignore-scripts=true
-# «Карантин»: не ставить пакеты, опубликованные за последние 7 дней
-min-release-age=10080
+# «Карантин»: не ставить пакеты моложе 7 дней. Значение в ДНЯХ (npm >= 11.10.0)
+min-release-age=7
+# Будущие `npm install <pkg>` сохраняют точную версию без ^/~
+save-exact=true
 # Аудит при установке; без рекламных сообщений
 audit=true
 fund=false
@@ -39,8 +41,8 @@ npm audit signatures   # проверка подписей пакетов в р�
 - `package.json` содержит **точные** версии (без `^`/`~`); `package-lock.json`
   закоммичен. Любое обновление зависимостей — отдельным ревью с проверкой поля
   `hasInstallScript` в lock-файле.
-- Целевые версии: Angular `21.2.x`, Tailwind CSS `4.3.x`, `@noble/curves` 1.x,
-  `@noble/hashes` 1.x (research.md R4).
+- Целевые версии: Angular `21.2.12` (CLI/build `21.2.10`), Tailwind CSS `4.3.0`,
+  `@noble/curves`/`@noble/hashes` `2.2.0` (research.md R4).
 
 ## Шаг 3. Запуск в режиме разработки
 

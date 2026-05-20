@@ -1,0 +1,25 @@
+# Dependencies
+/node_modules/
+
+# Build output
+/dist/
+/out-tsc/
+/.angular/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Test / coverage
+/coverage/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

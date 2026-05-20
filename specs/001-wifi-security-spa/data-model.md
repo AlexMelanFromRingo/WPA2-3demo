@@ -33,6 +33,10 @@ EffectiveScenario(module) = { ...sharedScenario, ...moduleOverride[module] }
 **State transitions**: `valid` ⇄ `invalid` (по результату валидации) →
 `recomputing` (запущен пересчёт) → `ready` (артефакты получены).
 
+**Кэш вычисленных значений (FR-010)**: `ScenarioStateService` хранит вычисленные
+артефакты, привязанные к хэшу `EffectiveScenario` каждого модуля; при переходе
+между модулями и шагами значения берутся из кэша, а не пересчитываются заново.
+
 ---
 
 ## 2. Module — модуль методички
