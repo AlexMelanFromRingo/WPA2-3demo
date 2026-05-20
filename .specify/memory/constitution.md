@@ -1,50 +1,164 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: (unversioned template) → 1.0.0
+Bump rationale: Initial ratification — placeholder template replaced with concrete
+                project governance. First adopted version under semantic versioning.
+
+Principles defined (5):
+  + I.   Понятность для абсолютного новичка (NON-NEGOTIABLE)
+  + II.  Визуальные подсказки и схемы потоков данных (NON-NEGOTIABLE)
+  + III. Превосходство над эталонными проектами
+  + IV.  Неблокирующий UI и редактируемость параметров (NON-NEGOTIABLE)
+  + V.   Строго образовательная симуляция (NON-NEGOTIABLE)
+
+Sections added:
+  + Технические ограничения и стандарты
+  + Рабочий процесс и контроль качества
+  + Governance
+
+Sections removed: none (initial ratification)
+
+Templates reviewed for consistency:
+  ✅ .specify/templates/plan-template.md   — generic "Constitution Check" gate;
+                                             gates resolved per-feature, no edit needed
+  ✅ .specify/templates/spec-template.md   — agent-agnostic placeholders, no edit needed
+  ✅ .specify/templates/tasks-template.md  — agent-agnostic placeholders, no edit needed
+  ✅ CLAUDE.md                             — references "current plan" only, no edit needed
+
+Follow-up TODOs: none — all placeholders resolved.
+-->
+
+# Конституция проекта «Интерактивная методичка WPA2/WPA3 + Hashcat 22000»
+
+Проект — интерактивная визуальная учебная методичка, объясняющая работу WPA2/WPA3
+и принципы режима 22000 утилиты Hashcat. Эта конституция задаёт неотменяемые правила,
+которым подчиняются все спецификации, планы, задачи и реализация.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Понятность для абсолютного новичка (NON-NEGOTIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Целевая аудитория — абсолютные новички, не имеющие подготовки в криптографии и
+сетевой безопасности.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Текст MUST быть максимально простым: короткие предложения, бытовые аналогии,
+  отсутствие неопределяемого жаргона.
+- При первом употреблении любого термина (хеш, соль, итерация, рукопожатие, ключ,
+  MIC и т.п.) определение MUST даваться немедленно, на месте.
+- Каждое объяснение MUST строиться в порядке «зачем → что → как».
+- Любой новый текст проверяется контрольным вопросом: поймёт ли его человек, впервые
+  встретивший слова «хеш» и «соль». Если нет — текст не принимается.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Обоснование: ценность методички определяется исключительно тем, насколько легко её
+понимает неподготовленный читатель.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Визуальные подсказки и схемы потоков данных (NON-NEGOTIABLE)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Каждое криптографическое действие сопровождается визуальным объяснением.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Каждый криптографический шаг (конкатенация строк, PBKDF2, HMAC, вывод PMK/PTK,
+  расчёт и сравнение MIC, SAE-обмен WPA3, сборка строки 22000) MUST сопровождаться
+  всплывающей подсказкой (tooltip) и визуальной схемой перетекания данных.
+- Схема MUST показывать связку «вход → преобразование → выход» с конкретными текущими
+  значениями параметров, а не абстрактными обозначениями.
+- Криптографический шаг NOT считается завершённым, пока для него отсутствует схема
+  потока данных и поясняющая подсказка.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Обоснование: новичок усваивает преобразование данных через зрительный образ быстрее
+и надёжнее, чем через текст.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Превосходство над эталонными проектами
+
+Наглядность измеряется относительно прошлых работ автора.
+
+- Эталоны наглядности — проекты `TOTP_demo`, `rsa16-edu`, `rust_aes128_demo`.
+- Наглядность каждого раздела MUST быть не ниже эталонной и целенаправленно её
+  превосходить (больше интерактива, более явные схемы, более простой текст).
+- Любое проектное или техническое решение, ухудшающее наглядность относительно
+  эталонов, MUST быть отклонено либо явно обосновано в разделе Complexity Tracking
+  плана.
+
+Обоснование: проект имеет смысл только как шаг вперёд по сравнению с уже сделанным.
+
+### IV. Неблокирующий UI и редактируемость параметров (NON-NEGOTIABLE)
+
+Интерфейс остаётся отзывчивым при любых вычислениях.
+
+- Все входные параметры (SSID, Password, ANonce, SNonce, MAC-адреса AP и клиента и
+  прочие исходные данные) MUST быть редактируемыми пользователем.
+- Тяжёлые криптографические вычисления — в первую очередь PBKDF2 на 4096 итераций —
+  MUST выполняться вне главного потока UI (Web Worker или асинхронная разбивка на
+  чанки). Запуск тяжёлых вычислений в UI-потоке ЗАПРЕЩЁН.
+- Главный поток MUST оставаться отзывчивым: ввод текста в любое поле NOT вызывает
+  фризов; целевой ориентир — отсутствие пропущенных кадров при наборе.
+- Длительные операции MUST отображать прогресс и MUST корректно отменяться или
+  перезапускаться при изменении входных данных.
+
+Обоснование: фриз интерфейса при наборе разрушает учебный опыт и противоречит самой
+идее интерактивной методички.
+
+### V. Строго образовательная симуляция (NON-NEGOTIABLE)
+
+Раздел Hashcat 22000 — образовательная симуляция, а не инструмент атаки.
+
+- Раздел Hashcat 22000 MUST оставаться симуляцией математики оффлайн-атаки
+  исключительно в учебных целях.
+- Проект MUST работать только с данными, введёнными самим пользователем: без захвата
+  реального трафика, без перехвата рукопожатий, без какого-либо сетевого взаимодействия.
+- Проект MUST NOT превращаться в боевой инструмент: без перебора по реальным
+  словарям-«утечкам», без интеграции с настоящим Hashcat, без вывода, пригодного для
+  атаки на чужие сети.
+- Каждый раздел, демонстрирующий «атаку», MUST содержать явную пометку об
+  образовательном назначении.
+
+Обоснование: образовательная цель не должна создавать средство для нанесения вреда.
+
+## Технические ограничения и стандарты
+
+- **Платформа**: клиентское браузерное приложение. Работает офлайн, без бэкенда;
+  данные пользователя NOT передаются на сервер.
+- **Криптографическая корректность**: вычисления WPA2/WPA3 (PBKDF2-HMAC-SHA1,
+  4-way handshake, PMK/PTK, MIC, SAE для WPA3) MUST быть математически корректны и
+  совпадать с эталонными тестовыми векторами. Упрощения допускаются только в подаче
+  материала, но НЕ в числах.
+- **Формат Hashcat 22000**: структура строки MUST соответствовать реальному формату
+  режима 22000 (WPA-PBKDF2-PMKID+EAPOL) на уровне состава и порядка полей.
+- **Модель потоков**: тяжёлые вычисления — через Web Workers; UI-логика — в главном
+  потоке (см. Принцип IV).
+- **Зависимости**: набор зависимостей минимален и прозрачен. Криптопримитивы по
+  возможности берутся из проверяемых источников (WebCrypto там, где применимо).
+
+## Рабочий процесс и контроль качества
+
+- **Ворота конституции**: функция считается готовой только после проверки по каждому
+  из пяти принципов. Невыполнение любого NON-NEGOTIABLE принципа блокирует приёмку.
+- **Проверка отзывчивости (Принцип IV)**: ручная проверка набора текста в полях
+  параметров — фризы отсутствуют.
+- **Проверка корректности крипто**: сверка результатов с эталонными тестовыми
+  векторами WPA2/WPA3 и форматом 22000.
+- **Проверка наглядности (Принципы II, III)**: каждый раздел сопоставляется с
+  эталонами `TOTP_demo`, `rsa16-edu`, `rust_aes128_demo`; наличие схем и подсказок
+  для всех криптографических шагов подтверждено.
+- **Фиксация отклонений**: любое сознательное отступление от принципа MUST быть
+  записано в раздел Complexity Tracking плана с обоснованием и отклонённой
+  упрощённой альтернативой.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Эта конституция превыше прочих практик: при конфликте приоритет имеют её правила.
+- **Поправки**: документируются, версионируются по семантическому версионированию и
+  сопровождаются синхронным обновлением зависимых шаблонов (`plan-template.md`,
+  `spec-template.md`, `tasks-template.md`) и runtime-инструкций.
+- **Правила версионирования**:
+  - MAJOR — несовместимые изменения управления или удаление/переопределение
+    принципов;
+  - MINOR — добавление нового принципа либо раздела или существенное расширение
+    указаний;
+  - PATCH — уточнения формулировок, исправления, не меняющие смысла.
+- **Контроль соответствия**: каждый план (`/speckit-plan`) MUST проходить раздел
+  Constitution Check; выявленные нарушения фиксируются в Complexity Tracking с
+  обоснованием.
+- **Runtime-инструкции**: оперативное руководство по разработке — в файле `CLAUDE.md`.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-05-20 | **Last Amended**: 2026-05-20
