@@ -8,4 +8,155 @@ body {
 
 body {
   font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  background: #f5f5f5;
+}
+
+:root {
+  color-scheme: light;
+}
+
+/* ============================================================
+   Тёмная тема — глобальный оверрайд палитры Tailwind.
+   Активируется классом .dark на <html> (ThemeService).
+   Подход аналогичен body.dark-theme в референсах TOTP_demo /
+   rsa16-edu: одно место правит всю палитру, компоненты не трогаем.
+   Не-слоевые правила перекрывают утилиты Tailwind из @layer.
+   ============================================================ */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background: #0b1120;
+}
+
+/* поверхности */
+.dark .bg-white {
+  background-color: #1e293b;
+}
+.dark .bg-slate-50 {
+  background-color: #0f172a;
+}
+.dark .bg-slate-100 {
+  background-color: #0f172a;
+}
+.dark .bg-slate-200 {
+  background-color: #334155;
+}
+
+/* границы */
+.dark .border-slate-200 {
+  border-color: #334155;
+}
+.dark .border-slate-300 {
+  border-color: #475569;
+}
+.dark .border-l-blue-600,
+.dark .border-blue-600,
+.dark .border-blue-500 {
+  border-color: #3b82f6;
+}
+
+/* текст */
+.dark .text-slate-800 {
+  color: #e2e8f0;
+}
+.dark .text-slate-700 {
+  color: #cbd5e1;
+}
+.dark .text-slate-600 {
+  color: #cbd5e1;
+}
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+.dark .text-slate-400 {
+  color: #64748b;
+}
+.dark .text-blue-700 {
+  color: #60a5fa;
+}
+.dark .text-sky-700 {
+  color: #38bdf8;
+}
+
+/* инфо-блок: голубой */
+.dark .bg-sky-50 {
+  background-color: #0c2438;
+}
+.dark .border-sky-200 {
+  border-color: #1e3a5f;
+}
+.dark .text-sky-800 {
+  color: #bae6fd;
+}
+
+/* инфо-блок: янтарный */
+.dark .bg-amber-50 {
+  background-color: #36290a;
+}
+.dark .border-amber-300 {
+  border-color: #92660f;
+}
+.dark .text-amber-800 {
+  color: #fcd34d;
+}
+.dark .text-amber-900 {
+  color: #fde68a;
+}
+
+/* инфо-блок: красный */
+.dark .bg-red-50 {
+  background-color: #3a1518;
+}
+.dark .border-red-300 {
+  border-color: #7f1d1d;
+}
+.dark .border-red-400 {
+  border-color: #991b1b;
+}
+.dark .text-red-600 {
+  color: #f87171;
+}
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: #fca5a5;
+}
+
+/* инфо-блок: зелёный */
+.dark .bg-emerald-50 {
+  background-color: #0b2e1f;
+}
+.dark .border-emerald-300 {
+  border-color: #065f46;
+}
+.dark .text-emerald-800 {
+  color: #6ee7b7;
+}
+
+/* бейджи результата */
+.dark .bg-emerald-100 {
+  background-color: #064e3b;
+}
+.dark .bg-red-100 {
+  background-color: #7f1d1d;
+}
+
+/* кольца (ring) */
+.dark .ring-slate-300 {
+  --tw-ring-color: #475569;
+}
+.dark .ring-emerald-300 {
+  --tw-ring-color: #065f46;
+}
+
+/* hover-состояния */
+.dark .hover\:bg-slate-50:hover {
+  background-color: #0f172a;
+}
+.dark .hover\:bg-slate-200:hover {
+  background-color: #334155;
+}
+.dark .hover\:text-blue-700:hover {
+  color: #60a5fa;
 }

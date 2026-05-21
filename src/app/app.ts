@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import type { NetworkScenario } from './core/models';
 import { ScenarioStateService } from './core/state/scenario-state.service';
+import { ThemeService } from './core/theme.service';
 import { ParamEditor } from './components/shared/param-editor/param-editor';
 
 /**
@@ -14,15 +15,27 @@ import { ParamEditor } from './components/shared/param-editor/param-editor';
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ParamEditor],
   template: `
-    <div class="min-h-screen bg-[#f5f5f5] text-slate-800">
+    <div class="min-h-screen text-slate-800">
       <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto max-w-3xl px-4 py-4 sm:px-6">
-          <h1 class="text-xl font-bold text-blue-700">
-            Методичка Wi-Fi: WPA2 · WPA3 · Hashcat 22000
-          </h1>
-          <p class="mt-0.5 text-sm text-slate-500">
-            Интерактивная визуальная методичка по безопасности Wi-Fi для новичков
-          </p>
+        <div class="mx-auto flex max-w-3xl items-start justify-between gap-3 px-4 py-4 sm:px-6">
+          <div>
+            <h1 class="text-xl font-bold text-blue-700">
+              Методичка Wi-Fi: WPA2 · WPA3 · Hashcat 22000
+            </h1>
+            <p class="mt-0.5 text-sm text-slate-500">
+              Интерактивная визуальная методичка по безопасности Wi-Fi для новичков
+            </p>
+          </div>
+          <button
+            type="button"
+            class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            [attr.aria-label]="
+              theme.theme() === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'
+            "
+            (click)="theme.toggle()"
+          >
+            {{ theme.theme() === 'dark' ? '☀ Светлая' : '🌙 Тёмная' }}
+          </button>
         </div>
       </header>
 
@@ -92,6 +105,8 @@ import { ParamEditor } from './components/shared/param-editor/param-editor';
 })
 export class App {
   private readonly scenarioState = inject(ScenarioStateService);
+
+  protected readonly theme = inject(ThemeService);
 
   protected readonly scenario = toSignal(this.scenarioState.scenario$, { requireSync: true });
 
