@@ -109,7 +109,7 @@ export class HandshakeVisualizer {
 
   protected readonly steps = computed<VisualizationStep[]>(() => {
     const current = this.handshake();
-    return current ? buildWpa2Steps(current.scenario, current.result) : [];
+    return current ? buildWpa2Steps(current.scenario, current.result, this.locale.lang()) : [];
   });
 
   protected readonly currentIndex = toSignal(this.stepController.current$(MODULE), {

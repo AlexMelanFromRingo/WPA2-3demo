@@ -143,7 +143,7 @@ export class HashcatSim {
 
   protected readonly steps = computed<VisualizationStep[]>(() => {
     const crack = this.result();
-    return crack ? buildHashcatSteps(crack, this.fastMode()) : [];
+    return crack ? buildHashcatSteps(crack, this.fastMode(), this.locale.lang()) : [];
   });
 
   protected readonly currentIndex = toSignal(this.stepController.current$(MODULE), {
