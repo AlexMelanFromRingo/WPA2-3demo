@@ -9,7 +9,7 @@ import { hexToBytes } from './hex';
 import type { WorkerRequest, WorkerResponse } from '../models';
 import { type CrackParams, runCrack } from './hashcat22000';
 import { runSae } from './sae';
-import { buildEapolKeyFrame, computeMic, derivePmk, derivePtk } from './wpa2';
+import { buildEapolKeyFrame, computeMic, derivePmk, derivePtk, pbkdf2Trace } from './wpa2';
 
 addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
   void handle(event.data);
@@ -26,7 +26,8 @@ async function handle(request: WorkerRequest): Promise<void> {
       case 'wpa2.pmk': {
         const p = payload as { passphrase: string; ssid: string };
         const pmk = await derivePmk(p.passphrase, p.ssid);
-        reply({ id, generation, ok: true, result: { pmk } });
+        const trace = await pbkdf2Trace(p.passphrase, p.ssid);
+        reply({ id, generation, ok: true, result: { pmk, pbkdf2Trace: trace } });
         return;
       }
       case 'wpa2.ptk': {

@@ -4,6 +4,7 @@ import { map, switchMap } from 'rxjs/operators';
 import type { CryptoOp, NetworkScenario, WorkerRequest, WorkerResponse } from '../models';
 import type { CrackParams, CrackResult } from './hashcat22000';
 import type { SaeRunResult } from './sae';
+import type { Pbkdf2Trace } from './wpa2';
 
 export type { SaeRunResult } from './sae';
 export type { CrackParams, CrackResult, CandidateResult } from './hashcat22000';
@@ -14,9 +15,13 @@ interface PendingHandler {
   readonly reject: (error: Error) => void;
 }
 
+export type { Pbkdf2Trace } from './wpa2';
+
 /** Полный результат расчёта рукопожатия WPA2. */
 export interface Wpa2HandshakeResult {
   pmk: Uint8Array;
+  /** Промежуточные значения цепочки PBKDF2 (U1, U2, U3) для трассировки. */
+  pbkdf2Trace: Pbkdf2Trace;
   b: Uint8Array;
   ptk: Uint8Array;
   kck: Uint8Array;
@@ -88,11 +93,11 @@ export class CryptoEngineService implements OnDestroy {
    * незавершённую цепочку при новой подписке (FR-009).
    */
   runWpa2Handshake(scenario: NetworkScenario): Observable<Wpa2HandshakeResult> {
-    return this.request<{ pmk: Uint8Array }>('wpa2.pmk', {
+    return this.request<{ pmk: Uint8Array; pbkdf2Trace: Pbkdf2Trace }>('wpa2.pmk', {
       passphrase: scenario.passphrase,
       ssid: scenario.ssid,
     }).pipe(
-      switchMap(({ pmk }) =>
+      switchMap(({ pmk, pbkdf2Trace }) =>
         this.request<{
           b: Uint8Array;
           ptk: Uint8Array;
@@ -110,7 +115,7 @@ export class CryptoEngineService implements OnDestroy {
             this.request<{ eapolFrame: Uint8Array; mic: Uint8Array }>('wpa2.mic', {
               kck: ptk.kck,
               sNonce: scenario.sNonce,
-            }).pipe(map((micResult) => ({ pmk, ...ptk, ...micResult }))),
+            }).pipe(map((micResult) => ({ pmk, pbkdf2Trace, ...ptk, ...micResult }))),
           ),
         ),
       ),

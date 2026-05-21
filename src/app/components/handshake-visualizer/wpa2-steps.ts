@@ -78,6 +78,16 @@ export function buildWpa2Steps(
     tk: tk.hex,
     eapol: eapol.hex,
     mic: mic.hex,
+    // Трассировка PBKDF2 (шаг 1): звенья цепочки U1, U2, U3 и итоговые блоки.
+    u1: bytesToHex(result.pbkdf2Trace.u1),
+    u2: bytesToHex(result.pbkdf2Trace.u2),
+    u3: bytesToHex(result.pbkdf2Trace.u3),
+    t1: pmk.hex.slice(0, 40),
+    t2: pmk.hex.slice(40, 64),
+    // Трассировка PRF-512 (шаг 4): куски-выходы HMAC со счётчиками 0..2.
+    prf0: ptk.hex.slice(0, 40),
+    prf1: ptk.hex.slice(40, 80),
+    prf2: ptk.hex.slice(80, 96),
   };
 
   const wiring: StepWiring[] = [

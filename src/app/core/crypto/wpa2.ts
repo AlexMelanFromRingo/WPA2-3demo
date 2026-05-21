@@ -59,6 +59,31 @@ export async function derivePmk(passphrase: string, ssid: string): Promise<Uint8
   return new Uint8Array(bits);
 }
 
+/** Промежуточные значения цепочки PBKDF2 (блок 1) — для наглядной трассировки. */
+export interface Pbkdf2Trace {
+  /** U1 = HMAC-SHA1(пароль, соль ‖ 0x00000001). */
+  u1: Uint8Array;
+  /** U2 = HMAC-SHA1(пароль, U1). */
+  u2: Uint8Array;
+  /** U3 = HMAC-SHA1(пароль, U2). */
+  u3: Uint8Array;
+}
+
+/**
+ * Первые три звена цепочки PBKDF2 для блока 1 (U1, U2, U3).
+ * Показывает, что «4096 итераций» — это цепочка HMAC-SHA1, где каждый
+ * следующий U вычисляется из предыдущего.
+ */
+export async function pbkdf2Trace(passphrase: string, ssid: string): Promise<Pbkdf2Trace> {
+  const password = utf8ToBytes(passphrase);
+  // Вход первого HMAC: соль (SSID) ‖ номер блока (4 байта big-endian) = 1.
+  const block1Input = concatBytes(utf8ToBytes(ssid), new Uint8Array([0, 0, 0, 1]));
+  const u1 = await hmacSha1(password, block1Input);
+  const u2 = await hmacSha1(password, u1);
+  const u3 = await hmacSha1(password, u2);
+  return { u1, u2, u3 };
+}
+
 /** HMAC-SHA1(ключ, сообщение). */
 export async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
   const cryptoKey = await subtle().importKey(
