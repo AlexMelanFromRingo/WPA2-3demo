@@ -182,11 +182,18 @@ const RU: SaeText = {
         '  K.x = {sharedK}',
         '',
         'ОПЕРАЦИЯ:',
-        '  KDF на HMAC-SHA256',
+        '  KDF на HMAC-SHA256 выдаёт 64 байта; их делят на две',
+        '  равные части по 32 байта:',
+        '    KCK = байты 0..31  — ключ подтверждения обмена SAE',
+        '    PMK = байты 32..63 — мастер-ключ, он нужен дальше',
         '',
         'РЕЗУЛЬТАТ:',
+        '  KCK = {kck}',
         '  PMK = {pmk}',
       ],
+      byteCaption:
+        'KDF выдаёт 64 байта. Их делят на две равные части по 32: KCK (индексы 0–31) ' +
+        'и PMK (32–63). KCK подтверждает обмен, PMK идёт дальше как мастер-ключ.',
     },
     {
       title: 'Шаг 6 — Что видит перехватчик',
@@ -399,11 +406,18 @@ const UK: SaeText = {
         '  K.x = {sharedK}',
         '',
         'ОПЕРАЦІЯ:',
-        '  KDF на HMAC-SHA256',
+        '  KDF на HMAC-SHA256 видає 64 байти; їх ділять на дві',
+        '  рівні частини по 32 байти:',
+        '    KCK = байти 0..31  — ключ підтвердження обміну SAE',
+        '    PMK = байти 32..63 — майстер-ключ, він потрібен далі',
         '',
         'РЕЗУЛЬТАТ:',
+        '  KCK = {kck}',
         '  PMK = {pmk}',
       ],
+      byteCaption:
+        'KDF видає 64 байти. Їх ділять на дві рівні частини по 32: KCK (індекси 0–31) ' +
+        'і PMK (32–63). KCK підтверджує обмін, PMK іде далі як майстер-ключ.',
     },
     {
       title: 'Крок 6 — Що бачить перехоплювач',
@@ -619,11 +633,19 @@ const EN: SaeText = {
         '  K.x = {sharedK}',
         '',
         'OPERATION:',
-        '  KDF on HMAC-SHA256',
+        '  KDF on HMAC-SHA256 outputs 64 bytes; they are split',
+        '  into two equal 32-byte parts:',
+        '    KCK = bytes 0..31  — the SAE exchange confirmation key',
+        '    PMK = bytes 32..63 — the master key, needed next',
         '',
         'RESULT:',
+        '  KCK = {kck}',
         '  PMK = {pmk}',
       ],
+      byteCaption:
+        'The KDF outputs 64 bytes. They are split into two equal 32-byte parts: KCK ' +
+        '(indices 0–31) and PMK (32–63). KCK confirms the exchange, PMK goes on as the ' +
+        'master key.',
     },
     {
       title: 'Step 6 — What an eavesdropper sees',

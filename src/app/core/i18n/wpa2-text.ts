@@ -11,6 +11,8 @@ export interface Wpa2Text {
     blockB: string;
     eapol: string;
   };
+  /** Подпись «отброшено» для байтовых диаграмм. */
+  droppedLabel: string;
   steps: StepText[];
 }
 
@@ -23,6 +25,7 @@ const RU: Wpa2Text = {
     blockB: 'Блок B',
     eapol: 'Кадр EAPOL (M2)',
   },
+  droppedLabel: 'отброшено',
   steps: [
     {
       title: 'Исходные данные',
@@ -76,7 +79,7 @@ const RU: Wpa2Text = {
         '  повторить 4096 раз HMAC-SHA1, собрать 256 бит',
         '',
         'РЕЗУЛЬТАТ:',
-        '  PMK = {pmk}',
+        '  PMK (32 байта) = {pmk}',
       ],
     },
     {
@@ -109,19 +112,19 @@ const RU: Wpa2Text = {
       tooltip: 'MAC-адреса и nonce складывают в строго определённом порядке.',
       description:
         'Чтобы точка доступа и клиент независимо получили один и тот же ключ, исходные ' +
-        'данные склеивают в строго определённом порядке: сначала меньшее значение, затем ' +
-        'большее. Так обе стороны соберут одинаковый блок B независимо от того, кто считает ' +
-        'первым.',
+        'данные склеивают (конкатенация ‖) в строго определённом порядке: из каждой пары ' +
+        'сначала меньшее значение, затем большее. Так обе стороны соберут одинаковый блок ' +
+        'B независимо от того, кто считает первым.',
       formula: 'B = min(AA,SPA) ‖ max(AA,SPA) ‖ min(ANonce,SNonce) ‖ max(ANonce,SNonce)',
       terms: [
         { term: 'Блок B', definition: 'склейка исходных данных в одну длинную строку байтов — заготовка для следующего шага.' },
-        { term: 'Конкатенация (‖)', definition: 'соединение кусков данных в один, друг за другом. Знак ‖ означает «приписать следом».' },
+        { term: 'Конкатенация (‖)', definition: 'соединение кусков байт в один — подряд, друг за другом, без разделителей. Знак ‖ означает «приписать следом». Порядок кусков фиксирован.' },
         { term: 'min / max', definition: 'меньшее и большее из двух значений (байты сравниваются как числа). Фиксированный порядок даёт обеим сторонам одинаковый блок.' },
         { term: 'AA / SPA', definition: 'AA — MAC точки доступа (Authenticator Address), SPA — MAC клиента (Supplicant Address).' },
       ],
       transform: 'min/max MAC и nonce',
       calc: [
-        'СКЛАДЫВАЕМ по порядку «меньший, больший»:',
+        'СКЛАДЫВАЕМ четыре куска подряд (‖), из каждой пары — меньший, потом больший:',
         '  MAC AP  {apMac}',
         '  MAC STA {clientMac}',
         '  ANonce  {aNonce}',
@@ -153,24 +156,30 @@ const RU: Wpa2Text = {
         '  B   = {b}',
         '',
         'ОПЕРАЦИЯ:',
-        '  PRF-512 — повторный HMAC-SHA1 со счётчиками 0..3',
+        '  PRF-512 — повторный HMAC-SHA1 со счётчиками 0..3.',
+        '  PRF-512 выдаёт 64 байта; для шифрования CCMP берут',
+        '  ПЕРВЫЕ 48 (индексы 0–47), последние 16 отбрасываются.',
         '',
-        'РЕЗУЛЬТАТ (первые 48 байт из 64):',
-        '  PTK = {ptk}',
+        'РЕЗУЛЬТАТ:',
+        '  PTK (48 байт) = {ptk}',
       ],
+      byteCaption:
+        'PRF-512 выдаёт 64 байта. Зелёные ячейки (индексы 0–47) — это PTK, их берут. ' +
+        'Серые с «✕» (48–63) — отбрасывают.',
     },
     {
       title: 'Шаг 5 — Разбиение PTK на KCK, KEK и TK',
       tooltip: 'PTK делится на три ключа с разными ролями.',
       description:
-        'Полученный PTK — это не один ключ, а связка из трёх. Первые 16 байт — KCK — ' +
-        'подтверждают подлинность сообщений рукопожатия. Следующие 16 — KEK — шифруют ' +
-        'служебные ключи. Последние 16 — TK — шифруют ваш сетевой трафик.',
+        'Полученный PTK — это не один ключ, а связка из трёх. PTK режут на три равные ' +
+        'части по 16 байт: первые 16 (индексы 0–15) — KCK, следующие 16 (16–31) — KEK, ' +
+        'последние 16 (32–47) — TK. У каждого ключа своя роль.',
       formula: 'PTK[0:48] = KCK(16 байт) ‖ KEK(16 байт) ‖ TK(16 байт)',
       terms: [
         { term: 'KCK', definition: 'Key Confirmation Key — «ключ подтверждения». Им вычисляют подпись MIC сообщений рукопожатия.' },
         { term: 'KEK', definition: 'Key Encryption Key — «ключ шифрования ключей». Им шифруют служебные ключи (например GTK) при передаче.' },
         { term: 'TK', definition: 'Temporal Key — «временный ключ». Именно им шифруется ваш реальный трафик (сайты, видео, сообщения).' },
+        { term: 'Индекс байта', definition: 'порядковый номер байта, счёт с нуля: первый байт — индекс 0, шестнадцатый — индекс 15.' },
       ],
       transform: 'Разбиение 48 байт: 16 + 16 + 16',
       calc: [
@@ -181,6 +190,9 @@ const RU: Wpa2Text = {
         '  KEK = байты 16..31 = {kek}',
         '  TK  = байты 32..47 = {tk}',
       ],
+      byteCaption:
+        'PTK (48 байт) делится на три равные части по 16 байт: KCK (индексы 0–15), ' +
+        'KEK (16–31), TK (32–47). Каждая часть — отдельный ключ со своей ролью.',
     },
     {
       title: 'Шаг 6 — Создание MIC',
@@ -195,7 +207,8 @@ const RU: Wpa2Text = {
         { term: 'MIC', definition: 'Message Integrity Code — «код целостности сообщения». Короткая подпись: совпала — сообщение подлинное, не совпала — что-то не так.' },
         { term: 'EAPOL', definition: 'EAP over LAN — протокол, по которому передаются сообщения рукопожатия M1–M4.' },
         { term: 'Кадр', definition: 'один пакет данных в сети — заголовок и содержимое. Кадр EAPOL — это одно сообщение рукопожатия.' },
-        { term: 'Усечение', definition: 'обрезка результата до нужной длины. HMAC-SHA1 даёт 20 байт, а для MIC берут только первые 16.' },
+        { term: 'Усечение (truncation)', definition: 'обрезка результата до нужной длины. HMAC-SHA1 даёт 20 байт, а для MIC берут только первые 16.' },
+        { term: 'Индекс байта', definition: 'порядковый номер байта, счёт с нуля: первый байт — индекс 0, двадцатый — индекс 19.' },
       ],
       transform: 'HMAC-SHA1, усечение до 16 байт',
       calc: [
@@ -204,11 +217,19 @@ const RU: Wpa2Text = {
         '  кадр EAPOL = {eapol}',
         '',
         'ОПЕРАЦИЯ:',
-        '  HMAC-SHA1(KCK, EAPOL) → 20 байт, берём первые 16',
+        '  HMAC-SHA1(ключ = KCK, кадр EAPOL) → 20 байт.',
+        '  MIC — это ПЕРВЫЕ 16 байт (индексы 0–15);',
+        '  последние 4 байта (16–19) ОТБРАСЫВАЮТСЯ.',
+        '  Почему 16? В кадре EAPOL-Key поле MIC занимает ровно',
+        '  16 байт (IEEE 802.11). См. байтовую диаграмму ниже.',
         '',
         'РЕЗУЛЬТАТ:',
         '  MIC = {mic}',
       ],
+      byteCaption:
+        'HMAC-SHA1 выдаёт 20 байт. Зелёные ячейки (индексы 0–15) — это MIC, их берут. ' +
+        'Серые с «✕» (16–19) — отбрасывают. Поле MIC в кадре EAPOL-Key — ровно 16 байт ' +
+        '(IEEE 802.11).',
       packetLabel: 'M2 — SNonce + MIC',
     },
     {
@@ -247,6 +268,7 @@ const UK: Wpa2Text = {
     blockB: 'Блок B',
     eapol: 'Кадр EAPOL (M2)',
   },
+  droppedLabel: 'відкинуто',
   steps: [
     {
       title: 'Початкові дані',
@@ -301,7 +323,7 @@ const UK: Wpa2Text = {
         '  повторити 4096 разів HMAC-SHA1, зібрати 256 бітів',
         '',
         'РЕЗУЛЬТАТ:',
-        '  PMK = {pmk}',
+        '  PMK (32 байти) = {pmk}',
       ],
     },
     {
@@ -334,18 +356,19 @@ const UK: Wpa2Text = {
       tooltip: 'MAC-адреси та nonce складають у строго визначеному порядку.',
       description:
         'Щоб точка доступу та клієнт незалежно отримали один і той самий ключ, початкові ' +
-        'дані склеюють у строго визначеному порядку: спершу менше значення, потім більше. ' +
-        'Так обидві сторони зберуть однаковий блок B незалежно від того, хто рахує першим.',
+        'дані склеюють (конкатенація ‖) у строго визначеному порядку: з кожної пари спершу ' +
+        'менше значення, потім більше. Так обидві сторони зберуть однаковий блок B ' +
+        'незалежно від того, хто рахує першим.',
       formula: 'B = min(AA,SPA) ‖ max(AA,SPA) ‖ min(ANonce,SNonce) ‖ max(ANonce,SNonce)',
       terms: [
         { term: 'Блок B', definition: 'склейка початкових даних в один довгий рядок байтів — заготовка для наступного кроку.' },
-        { term: 'Конкатенація (‖)', definition: 'з’єднання шматків даних в один, один за одним. Знак ‖ означає «дописати слідом».' },
+        { term: 'Конкатенація (‖)', definition: 'з’єднання шматків байтів в один — підряд, один за одним, без роздільників. Знак ‖ означає «дописати слідом». Порядок шматків фіксований.' },
         { term: 'min / max', definition: 'менше й більше з двох значень (байти порівнюються як числа). Фіксований порядок дає обом сторонам однаковий блок.' },
         { term: 'AA / SPA', definition: 'AA — MAC точки доступу (Authenticator Address), SPA — MAC клієнта (Supplicant Address).' },
       ],
       transform: 'min/max MAC і nonce',
       calc: [
-        'СКЛАДАЄМО за порядком «менший, більший»:',
+        'СКЛАДАЄМО чотири шматки підряд (‖), з кожної пари — менший, потім більший:',
         '  MAC AP  {apMac}',
         '  MAC STA {clientMac}',
         '  ANonce  {aNonce}',
@@ -377,24 +400,30 @@ const UK: Wpa2Text = {
         '  B   = {b}',
         '',
         'ОПЕРАЦІЯ:',
-        '  PRF-512 — повторний HMAC-SHA1 з лічильниками 0..3',
+        '  PRF-512 — повторний HMAC-SHA1 з лічильниками 0..3.',
+        '  PRF-512 видає 64 байти; для шифрування CCMP беруть',
+        '  ПЕРШІ 48 (індекси 0–47), останні 16 відкидаються.',
         '',
-        'РЕЗУЛЬТАТ (перші 48 байтів із 64):',
-        '  PTK = {ptk}',
+        'РЕЗУЛЬТАТ:',
+        '  PTK (48 байтів) = {ptk}',
       ],
+      byteCaption:
+        'PRF-512 видає 64 байти. Зелені клітинки (індекси 0–47) — це PTK, їх беруть. ' +
+        'Сірі з «✕» (48–63) — відкидають.',
     },
     {
       title: 'Крок 5 — Розбиття PTK на KCK, KEK і TK',
       tooltip: 'PTK ділиться на три ключі з різними ролями.',
       description:
-        'Отриманий PTK — це не один ключ, а зв’язка з трьох. Перші 16 байтів — KCK — ' +
-        'підтверджують справжність повідомлень рукостискання. Наступні 16 — KEK — шифрують ' +
-        'службові ключі. Останні 16 — TK — шифрують ваш мережевий трафік.',
+        'Отриманий PTK — це не один ключ, а зв’язка з трьох. PTK ріжуть на три рівні ' +
+        'частини по 16 байтів: перші 16 (індекси 0–15) — KCK, наступні 16 (16–31) — KEK, ' +
+        'останні 16 (32–47) — TK. У кожного ключа своя роль.',
       formula: 'PTK[0:48] = KCK(16 байтів) ‖ KEK(16 байтів) ‖ TK(16 байтів)',
       terms: [
         { term: 'KCK', definition: 'Key Confirmation Key — «ключ підтвердження». Ним обчислюють підпис MIC повідомлень рукостискання.' },
         { term: 'KEK', definition: 'Key Encryption Key — «ключ шифрування ключів». Ним шифрують службові ключі (наприклад GTK) під час передачі.' },
         { term: 'TK', definition: 'Temporal Key — «тимчасовий ключ». Саме ним шифрується ваш реальний трафік (сайти, відео, повідомлення).' },
+        { term: 'Індекс байта', definition: 'порядковий номер байта, лік із нуля: перший байт — індекс 0, шістнадцятий — індекс 15.' },
       ],
       transform: 'Розбиття 48 байтів: 16 + 16 + 16',
       calc: [
@@ -405,6 +434,9 @@ const UK: Wpa2Text = {
         '  KEK = байти 16..31 = {kek}',
         '  TK  = байти 32..47 = {tk}',
       ],
+      byteCaption:
+        'PTK (48 байтів) ділиться на три рівні частини по 16 байтів: KCK (індекси 0–15), ' +
+        'KEK (16–31), TK (32–47). Кожна частина — окремий ключ зі своєю роллю.',
     },
     {
       title: 'Крок 6 — Створення MIC',
@@ -419,7 +451,8 @@ const UK: Wpa2Text = {
         { term: 'MIC', definition: 'Message Integrity Code — «код цілісності повідомлення». Короткий підпис: збігся — повідомлення справжнє, не збігся — щось не так.' },
         { term: 'EAPOL', definition: 'EAP over LAN — протокол, яким передаються повідомлення рукостискання M1–M4.' },
         { term: 'Кадр', definition: 'один пакет даних у мережі — заголовок і вміст. Кадр EAPOL — це одне повідомлення рукостискання.' },
-        { term: 'Усічення', definition: 'обрізання результату до потрібної довжини. HMAC-SHA1 дає 20 байтів, а для MIC беруть лише перші 16.' },
+        { term: 'Усічення (truncation)', definition: 'обрізання результату до потрібної довжини. HMAC-SHA1 дає 20 байтів, а для MIC беруть лише перші 16.' },
+        { term: 'Індекс байта', definition: 'порядковий номер байта, лік із нуля: перший байт — індекс 0, двадцятий — індекс 19.' },
       ],
       transform: 'HMAC-SHA1, усічення до 16 байтів',
       calc: [
@@ -428,11 +461,19 @@ const UK: Wpa2Text = {
         '  кадр EAPOL = {eapol}',
         '',
         'ОПЕРАЦІЯ:',
-        '  HMAC-SHA1(KCK, EAPOL) → 20 байтів, беремо перші 16',
+        '  HMAC-SHA1(ключ = KCK, кадр EAPOL) → 20 байтів.',
+        '  MIC — це ПЕРШІ 16 байтів (індекси 0–15);',
+        '  останні 4 байти (16–19) ВІДКИДАЮТЬСЯ.',
+        '  Чому 16? У кадрі EAPOL-Key поле MIC займає рівно',
+        '  16 байтів (IEEE 802.11). Див. байтову діаграму нижче.',
         '',
         'РЕЗУЛЬТАТ:',
         '  MIC = {mic}',
       ],
+      byteCaption:
+        'HMAC-SHA1 видає 20 байтів. Зелені клітинки (індекси 0–15) — це MIC, їх беруть. ' +
+        'Сірі з «✕» (16–19) — відкидають. Поле MIC у кадрі EAPOL-Key — рівно 16 байтів ' +
+        '(IEEE 802.11).',
       packetLabel: 'M2 — SNonce + MIC',
     },
     {
@@ -471,6 +512,7 @@ const EN: Wpa2Text = {
     blockB: 'Block B',
     eapol: 'EAPOL frame (M2)',
   },
+  droppedLabel: 'discarded',
   steps: [
     {
       title: 'Input data',
@@ -525,7 +567,7 @@ const EN: Wpa2Text = {
         '  repeat HMAC-SHA1 4096 times, collect 256 bits',
         '',
         'RESULT:',
-        '  PMK = {pmk}',
+        '  PMK (32 bytes) = {pmk}',
       ],
     },
     {
@@ -559,19 +601,19 @@ const EN: Wpa2Text = {
       tooltip: 'The MAC addresses and nonces are concatenated in a strictly fixed order.',
       description:
         'So that the access point and the client independently obtain the same key, the ' +
-        'inputs are concatenated in a strictly fixed order: the smaller value first, then ' +
-        'the larger. This way both sides build the same block B regardless of who computes ' +
-        'first.',
+        'inputs are concatenated (‖) in a strictly fixed order: from each pair the smaller ' +
+        'value first, then the larger. This way both sides build the same block B ' +
+        'regardless of who computes first.',
       formula: 'B = min(AA,SPA) ‖ max(AA,SPA) ‖ min(ANonce,SNonce) ‖ max(ANonce,SNonce)',
       terms: [
         { term: 'Block B', definition: 'the inputs glued into one long string of bytes — the raw material for the next step.' },
-        { term: 'Concatenation (‖)', definition: 'joining pieces of data into one, end to end. The ‖ sign means “append after”.' },
+        { term: 'Concatenation (‖)', definition: 'joining chunks of bytes into one — back to back, with no separators. The ‖ sign means “append after”. The order of the chunks is fixed.' },
         { term: 'min / max', definition: 'the smaller and the larger of two values (bytes compared as numbers). The fixed order gives both sides the same block.' },
         { term: 'AA / SPA', definition: 'AA is the access point MAC (Authenticator Address), SPA is the client MAC (Supplicant Address).' },
       ],
       transform: 'min/max of MAC and nonce',
       calc: [
-        'CONCATENATE in “smaller, larger” order:',
+        'CONCATENATE four chunks back to back (‖); from each pair — smaller, then larger:',
         '  AP MAC   {apMac}',
         '  STA MAC  {clientMac}',
         '  ANonce   {aNonce}',
@@ -603,24 +645,30 @@ const EN: Wpa2Text = {
         '  B   = {b}',
         '',
         'OPERATION:',
-        '  PRF-512 — repeated HMAC-SHA1 with counters 0..3',
+        '  PRF-512 — repeated HMAC-SHA1 with counters 0..3.',
+        '  PRF-512 outputs 64 bytes; for CCMP encryption the',
+        '  FIRST 48 (indices 0–47) are kept, the last 16 discarded.',
         '',
-        'RESULT (first 48 of 64 bytes):',
-        '  PTK = {ptk}',
+        'RESULT:',
+        '  PTK (48 bytes) = {ptk}',
       ],
+      byteCaption:
+        'PRF-512 outputs 64 bytes. The green cells (indices 0–47) are the PTK — they are ' +
+        'kept. The grey ones with “✕” (48–63) are discarded.',
     },
     {
       title: 'Step 5 — Splitting the PTK into KCK, KEK and TK',
       tooltip: 'The PTK is split into three keys with different roles.',
       description:
-        'The resulting PTK is not one key but a bundle of three. The first 16 bytes — KCK — ' +
-        'confirm the authenticity of handshake messages. The next 16 — KEK — encrypt ' +
-        'auxiliary keys. The last 16 — TK — encrypt your network traffic.',
+        'The resulting PTK is not one key but a bundle of three. The PTK is cut into three ' +
+        'equal 16-byte parts: the first 16 (indices 0–15) are the KCK, the next 16 (16–31) ' +
+        'the KEK, the last 16 (32–47) the TK. Each key has its own role.',
       formula: 'PTK[0:48] = KCK(16 bytes) ‖ KEK(16 bytes) ‖ TK(16 bytes)',
       terms: [
         { term: 'KCK', definition: 'Key Confirmation Key. It is used to compute the MIC signature of handshake messages.' },
         { term: 'KEK', definition: 'Key Encryption Key. It is used to encrypt auxiliary keys (such as the GTK) during transmission.' },
         { term: 'TK', definition: 'Temporal Key. This is the key that actually encrypts your real traffic (websites, video, messages).' },
+        { term: 'Byte index', definition: 'the ordinal number of a byte, counting from zero: the first byte is index 0, the sixteenth is index 15.' },
       ],
       transform: 'Splitting 48 bytes: 16 + 16 + 16',
       calc: [
@@ -631,6 +679,9 @@ const EN: Wpa2Text = {
         '  KEK = bytes 16..31 = {kek}',
         '  TK  = bytes 32..47 = {tk}',
       ],
+      byteCaption:
+        'The PTK (48 bytes) is split into three equal 16-byte parts: KCK (indices 0–15), ' +
+        'KEK (16–31), TK (32–47). Each part is a separate key with its own role.',
     },
     {
       title: 'Step 6 — Creating the MIC',
@@ -646,6 +697,7 @@ const EN: Wpa2Text = {
         { term: 'EAPOL', definition: 'EAP over LAN — the protocol over which handshake messages M1–M4 are sent.' },
         { term: 'Frame', definition: 'one packet of data on the network — a header and content. An EAPOL frame is one handshake message.' },
         { term: 'Truncation', definition: 'cutting the result to the required length. HMAC-SHA1 yields 20 bytes, and the MIC keeps only the first 16.' },
+        { term: 'Byte index', definition: 'the ordinal number of a byte, counting from zero: the first byte is index 0, the twentieth is index 19.' },
       ],
       transform: 'HMAC-SHA1, truncated to 16 bytes',
       calc: [
@@ -654,11 +706,19 @@ const EN: Wpa2Text = {
         '  EAPOL frame = {eapol}',
         '',
         'OPERATION:',
-        '  HMAC-SHA1(KCK, EAPOL) → 20 bytes, keep the first 16',
+        '  HMAC-SHA1(key = KCK, EAPOL frame) → 20 bytes.',
+        '  The MIC is the FIRST 16 bytes (indices 0–15);',
+        '  the last 4 bytes (16–19) are DISCARDED.',
+        '  Why 16? In the EAPOL-Key frame the MIC field is exactly',
+        '  16 bytes (IEEE 802.11). See the byte diagram below.',
         '',
         'RESULT:',
         '  MIC = {mic}',
       ],
+      byteCaption:
+        'HMAC-SHA1 outputs 20 bytes. The green cells (indices 0–15) are the MIC — they are ' +
+        'kept. The grey ones with “✕” (16–19) are discarded. The MIC field in the EAPOL-Key ' +
+        'frame is exactly 16 bytes (IEEE 802.11).',
       packetLabel: 'M2 — SNonce + MIC',
     },
     {

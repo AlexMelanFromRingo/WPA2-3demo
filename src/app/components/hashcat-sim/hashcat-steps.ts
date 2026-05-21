@@ -139,8 +139,11 @@ export function buildHashcatSteps(
         },
         artifacts: [pmk, hash, captured],
         byteView: {
-          keptHex: candidate.hashHex,
-          totalCells: 20,
+          hex: candidate.hashHex,
+          regions: [
+            { label: isPmkid ? 'PMKID' : 'MIC', byteCount: 16, tone: 'kept' },
+            { label: text.droppedLabel, byteCount: 4, tone: 'drop' },
+          ],
           caption: isPmkid ? text.perWordByteCaptionPmkid : text.perWordByteCaptionEapol,
         },
         badge: candidate.match

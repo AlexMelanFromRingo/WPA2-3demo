@@ -8,7 +8,13 @@ import { bytesToHex, hexToBytes, parseMac, utf8ToBytes } from '../../core/crypto
 import { fillCalc } from '../../core/i18n/step-text';
 import type { Lang } from '../../core/i18n/ui-text';
 import { WPA2_TEXT } from '../../core/i18n/wpa2-text';
-import type { ArtifactRef, CryptoArtifact, NetworkScenario, VisualizationStep } from '../../core/models';
+import type {
+  ArtifactRef,
+  ByteView,
+  CryptoArtifact,
+  NetworkScenario,
+  VisualizationStep,
+} from '../../core/models';
 
 function artifact(
   id: string,
@@ -93,8 +99,45 @@ export function buildWpa2Steps(
     { inputs: [mic], outputs: [], artifacts: [], packetFrom: 'ap' },
   ];
 
+  // Байтовые диаграммы для шагов, где байты режут/усекают.
+  const byteViewFor = (index: number, caption: string): ByteView | undefined => {
+    if (index === 4) {
+      return {
+        hex: ptk.hex,
+        regions: [
+          { label: 'PTK', byteCount: 48, tone: 'kept' },
+          { label: text.droppedLabel, byteCount: 16, tone: 'drop' },
+        ],
+        caption,
+      };
+    }
+    if (index === 5) {
+      return {
+        hex: ptk.hex,
+        regions: [
+          { label: 'KCK', byteCount: 16, tone: 'kept' },
+          { label: 'KEK', byteCount: 16, tone: 'kept2' },
+          { label: 'TK', byteCount: 16, tone: 'kept3' },
+        ],
+        caption,
+      };
+    }
+    if (index === 6) {
+      return {
+        hex: mic.hex,
+        regions: [
+          { label: 'MIC', byteCount: 16, tone: 'kept' },
+          { label: text.droppedLabel, byteCount: 4, tone: 'drop' },
+        ],
+        caption,
+      };
+    }
+    return undefined;
+  };
+
   return text.steps.map((step, index) => {
     const w = wiring[index];
+    const byteView = step.byteCaption ? byteViewFor(index, step.byteCaption) : undefined;
     return {
       index,
       title: step.title,
@@ -109,6 +152,7 @@ export function buildWpa2Steps(
         outputs: w.outputs.map(ref),
       },
       artifacts: w.artifacts,
+      ...(byteView ? { byteView } : {}),
       ...(step.packetLabel && w.packetFrom
         ? { packet: { from: w.packetFrom, label: step.packetLabel } }
         : {}),

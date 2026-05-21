@@ -8,7 +8,13 @@ import { bytesToHex, parseMac, utf8ToBytes } from '../../core/crypto/hex';
 import { SAE_TEXT } from '../../core/i18n/sae-text';
 import { fillCalc } from '../../core/i18n/step-text';
 import type { Lang } from '../../core/i18n/ui-text';
-import type { ArtifactRef, CryptoArtifact, NetworkScenario, VisualizationStep } from '../../core/models';
+import type {
+  ArtifactRef,
+  ByteView,
+  CryptoArtifact,
+  NetworkScenario,
+  VisualizationStep,
+} from '../../core/models';
 
 function artifact(
   id: string,
@@ -64,6 +70,7 @@ export function buildSaeSteps(
     clElement: clElement.hex,
     sharedK: sharedK.hex,
     pmk: pmk.hex,
+    kck: bytesToHex(result.kck),
     verdict: result.converged ? text.convergedYes : text.convergedNo,
   };
 
@@ -90,8 +97,19 @@ export function buildSaeSteps(
     { inputs: [pmk], outputs: [], artifacts: [] },
   ];
 
+  // Байтовая диаграмма шага 5: KDF выдаёт 64 байта = KCK ‖ PMK.
+  const byteViewForStep5 = (caption: string): ByteView => ({
+    hex: bytesToHex(result.kck) + pmk.hex,
+    regions: [
+      { label: 'KCK', byteCount: 32, tone: 'kept' },
+      { label: 'PMK', byteCount: 32, tone: 'kept2' },
+    ],
+    caption,
+  });
+
   return text.steps.map((step, index) => {
     const w = wiring[index];
+    const byteView = index === 5 && step.byteCaption ? byteViewForStep5(step.byteCaption) : undefined;
     return {
       index,
       title: step.title,
@@ -106,6 +124,7 @@ export function buildSaeSteps(
         outputs: w.outputs.map(ref),
       },
       artifacts: w.artifacts,
+      ...(byteView ? { byteView } : {}),
       ...(step.packetLabel && w.packetFrom
         ? { packet: { from: w.packetFrom, label: step.packetLabel } }
         : {}),

@@ -51,6 +51,7 @@ export interface HashcatText {
   perWordVerdictNoMatch: string;
   perWordByteCaptionPmkid: string;
   perWordByteCaptionEapol: string;
+  droppedLabel: string;
   badgeMatch: string;
   badgeNoMatch: string;
 
@@ -238,6 +239,7 @@ const RU: HashcatText = {
     'HMAC-SHA1 всегда выдаёт 20 байт. Зелёные ячейки (индексы 0–15) — это MIC, их берут. ' +
     'Серые с «✕» (16–19) — отбрасывают. Поле MIC в кадре EAPOL-Key — ровно 16 байт ' +
     '(IEEE 802.11).',
+  droppedLabel: 'отброшено',
   badgeMatch: '✓ Хэши совпали',
   badgeNoMatch: '✗ Хэши разные',
   fastTitle: 'Перебор словаря (ускоренный режим)',
@@ -456,6 +458,7 @@ const UK: HashcatText = {
     'HMAC-SHA1 завжди видає 20 байтів. Зелені клітинки (індекси 0–15) — це MIC, їх ' +
     'беруть. Сірі з «✕» (16–19) — відкидають. Поле MIC у кадрі EAPOL-Key — рівно 16 ' +
     'байтів (IEEE 802.11).',
+  droppedLabel: 'відкинуто',
   badgeMatch: '✓ Хеші збіглися',
   badgeNoMatch: '✗ Хеші різні',
   fastTitle: 'Перебір словника (прискорений режим)',
@@ -676,6 +679,7 @@ const EN: HashcatText = {
     'HMAC-SHA1 always outputs 20 bytes. The green cells (indices 0–15) are the MIC — they ' +
     'are kept. The grey ones with “✕” (16–19) are discarded. The MIC field in the ' +
     'EAPOL-Key frame is exactly 16 bytes (IEEE 802.11).',
+  droppedLabel: 'discarded',
   badgeMatch: '✓ Hashes match',
   badgeNoMatch: '✗ Hashes differ',
   fastTitle: 'Dictionary search (fast mode)',
