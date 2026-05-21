@@ -1,6 +1,7 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { animate, style, transition, trigger } from '@angular/animations';
 import type { VisualizationStep } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 import { DataFlowDiagram } from '../data-flow-diagram/data-flow-diagram';
 import { HexInspector } from '../hex-inspector/hex-inspector';
 import { Tooltip } from '../tooltip/tooltip';
@@ -56,7 +57,9 @@ import { Tooltip } from '../tooltip/tooltip';
 
       @if (step().formula; as formula) {
         <div class="mt-4">
-          <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Формула</span>
+          <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{
+            t('scFormula')
+          }}</span>
           <code
             class="mt-1 block overflow-x-auto rounded-md border-l-4 border-blue-500 bg-slate-100 px-3 py-2 font-mono text-sm text-slate-800"
             >{{ formula }}</code
@@ -65,9 +68,9 @@ import { Tooltip } from '../tooltip/tooltip';
       }
 
       <div class="mt-4">
-        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Вычисление — что и с чем делаем, как меняются данные
-        </span>
+        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{
+          t('scCalc')
+        }}</span>
         <pre
           class="mt-1 overflow-x-auto rounded-md bg-slate-100 px-3 py-3 font-mono text-xs leading-relaxed text-slate-800"
           >{{ calcText() }}</pre
@@ -75,18 +78,18 @@ import { Tooltip } from '../tooltip/tooltip';
       </div>
 
       <div class="mt-4">
-        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Схема потока данных
-        </span>
+        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{
+          t('scFlow')
+        }}</span>
         <div class="mt-1">
           <app-data-flow-diagram [flow]="step().dataFlow" />
         </div>
       </div>
 
       <div class="mt-4">
-        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Разбор терминов
-        </span>
+        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{
+          t('scTerms')
+        }}</span>
         <dl class="mt-1 flex flex-col gap-2 rounded-md bg-slate-50 p-3">
           @for (term of step().terms; track term.term) {
             <div class="text-sm leading-relaxed">
@@ -109,6 +112,8 @@ export class StepCard {
 
   /** Подпись прогресса, напр. «Шаг 3 из 8». */
   readonly progress = input<string>('');
+
+  protected readonly t = inject(LocaleService).t;
 
   /** Текст блока «Вычисление». */
   protected readonly calcText = computed(() => this.step().calc.join('\n'));

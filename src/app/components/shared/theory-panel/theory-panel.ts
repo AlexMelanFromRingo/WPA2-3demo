@@ -1,5 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import type { ModuleTheory } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Сворачиваемая панель «Теория» — учебный текст модуля со ссылками на
@@ -14,7 +15,7 @@ import type { ModuleTheory } from '../../../core/models';
                text-sm font-semibold text-slate-800 hover:bg-slate-50"
       >
         <span class="text-base">📖</span>
-        <span>Теория: {{ theory().title }}</span>
+        <span>{{ t('tpTheory') }}: {{ theory().title }}</span>
       </summary>
 
       <div class="border-t border-slate-200 px-5 py-4">
@@ -31,7 +32,7 @@ import type { ModuleTheory } from '../../../core/models';
 
         <div class="mt-6 border-t border-slate-200 pt-4">
           <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Источники и стандарты
+            {{ t('tpSources') }}
           </h4>
           <ul class="mt-2 flex flex-col gap-1.5">
             @for (reference of theory().references; track reference.url) {
@@ -55,6 +56,8 @@ import type { ModuleTheory } from '../../../core/models';
 export class TheoryPanel {
   /** Теоретический материал модуля. */
   readonly theory = input.required<ModuleTheory>();
+
+  protected readonly t = inject(LocaleService).t;
 
   /** Делит текст раздела на абзацы. */
   protected split(body: string): string[] {

@@ -11,6 +11,7 @@ import { DEFAULT_DICTIONARY, DEFAULT_SECRET_PASSWORD } from '../../core/crypto/h
 import type { AttackType, ModuleId, VisualizationStep } from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
+import { LocaleService } from '../../core/i18n/locale.service';
 import { MODULE_THEORY } from '../../core/theory';
 import { ControlPanel } from '../control-panel/control-panel';
 import { validateScenario } from '../handshake-visualizer/wpa2-validation';
@@ -34,10 +35,8 @@ const MODULE: ModuleId = 'hashcat-22000';
     <section>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="text-xl font-semibold text-slate-800">Модуль 3 — Симулятор Hashcat 22000</h2>
-          <p class="text-sm text-slate-500">
-            Как офлайн-перебор подбирает пароль Wi-Fi по перехваченному хэшу.
-          </p>
+          <h2 class="text-xl font-semibold text-slate-800">{{ t('m3Title') }}</h2>
+          <p class="text-sm text-slate-500">{{ t('m3Subtitle') }}</p>
         </div>
         <button
           type="button"
@@ -48,14 +47,12 @@ const MODULE: ModuleId = 'hashcat-22000';
           [class.text-slate-700]="!fastMode()"
           (click)="toggleFastMode()"
         >
-          ⏩ Ускоренный перебор: {{ fastMode() ? 'вкл' : 'выкл' }}
+          {{ fastMode() ? t('m3FastOn') : t('m3FastOff') }}
         </button>
       </div>
 
       <div class="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-        ⚠ Это строго образовательная симуляция математики офлайн-атаки. Реального захвата
-        трафика и сетевого взаимодействия не происходит — все вычисления идут только над
-        данными, которые вы ввели сами.
+        {{ t('m3Notice') }}
       </div>
 
       <div class="mt-3">
@@ -72,7 +69,7 @@ const MODULE: ModuleId = 'hashcat-22000';
 
       @if (errors().length > 0) {
         <div class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4">
-          <p class="text-sm font-semibold text-red-800">Проверьте параметры:</p>
+          <p class="text-sm font-semibold text-red-800">{{ t('m3ErrParams') }}</p>
           <ul class="mt-1 list-disc pl-5 text-sm text-red-700">
             @for (error of errors(); track error) {
               <li>{{ error }}</li>
@@ -85,14 +82,14 @@ const MODULE: ModuleId = 'hashcat-22000';
 
           @if (computing()) {
             <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
-              ⏳ Идёт перебор словаря — для каждого слова по-настоящему считается PBKDF2.
+              {{ t('m3Computing') }}
             </div>
           }
 
           @if (result(); as crack) {
             <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Строка хэша формата 22000
+                {{ t('m3LineLabel') }}
               </p>
               <p class="mt-1 break-all rounded bg-slate-100 p-2 font-mono text-xs text-slate-800">
                 {{ crack.hash22000Line }}
@@ -115,6 +112,7 @@ export class HashcatSim {
 
   protected readonly moduleId = MODULE;
   protected readonly theory = MODULE_THEORY[MODULE];
+  protected readonly t = inject(LocaleService).t;
   protected readonly attackType = signal<AttackType>('pmkid');
   protected readonly words = signal<string[]>([...DEFAULT_DICTIONARY]);
   protected readonly secretPassword = signal<string>(DEFAULT_SECRET_PASSWORD);
@@ -156,7 +154,9 @@ export class HashcatSim {
 
   protected readonly progress = computed(() => {
     const total = this.steps().length;
-    return total > 0 ? `Шаг ${this.currentIndex() + 1} из ${total}` : '';
+    return total > 0
+      ? `${this.t('progStep')} ${this.currentIndex() + 1} ${this.t('progOf')} ${total}`
+      : '';
   });
 
   constructor() {
@@ -176,7 +176,7 @@ export class HashcatSim {
           });
           const errors = [...validation.errors];
           if (params.words.length === 0) {
-            errors.push('Добавьте хотя бы одно слово в мини-словарь.');
+            errors.push(this.t('m3NoWords'));
           }
           this.errors.set(errors);
           if (errors.length > 0) {

@@ -1,4 +1,5 @@
-import { Component, model, signal } from '@angular/core';
+import { Component, inject, model, signal } from '@angular/core';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Редактор мини-словаря симулятора (FR-024): список слов-кандидатов с
@@ -9,9 +10,7 @@ import { Component, model, signal } from '@angular/core';
   template: `
     <div class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3">
       <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium text-slate-600">
-          «Настоящий» пароль перехваченной сети
-        </span>
+        <span class="text-xs font-medium text-slate-600">{{ t('deSecret') }}</span>
         <input
           type="text"
           class="rounded border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
@@ -21,7 +20,7 @@ import { Component, model, signal } from '@angular/core';
       </label>
 
       <div>
-        <p class="text-xs font-medium text-slate-600">Мини-словарь ({{ words().length }} слов)</p>
+        <p class="text-xs font-medium text-slate-600">{{ t('deDict') }} ({{ words().length }})</p>
         <ul class="mt-1 flex flex-col gap-1">
           @for (word of words(); track $index) {
             <li class="flex items-center gap-2">
@@ -35,14 +34,14 @@ import { Component, model, signal } from '@angular/core';
               </button>
             </li>
           } @empty {
-            <li class="text-xs text-slate-400">Словарь пуст — добавьте хотя бы одно слово.</li>
+            <li class="text-xs text-slate-400">{{ t('deEmpty') }}</li>
           }
         </ul>
         <div class="mt-2 flex gap-2">
           <input
             type="text"
             class="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
-            placeholder="новое слово"
+            [placeholder]="t('deNewPlaceholder')"
             [value]="newWord()"
             (input)="onNewWord($event)"
             (keyup.enter)="add()"
@@ -52,7 +51,7 @@ import { Component, model, signal } from '@angular/core';
             class="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
             (click)="add()"
           >
-            Добавить
+            {{ t('deAdd') }}
           </button>
         </div>
       </div>
@@ -66,6 +65,7 @@ export class DictionaryEditor {
   /** «Настоящий» пароль сценария (двусторонняя привязка). */
   readonly secretPassword = model<string>('');
 
+  protected readonly t = inject(LocaleService).t;
   protected readonly newWord = signal('');
 
   protected onSecret(event: Event): void {

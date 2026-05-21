@@ -1,5 +1,6 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import type { VisualizationStep } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Сцена «точка доступа ↔ клиент»: на шагах с переданным `packet`
@@ -65,7 +66,7 @@ import type { VisualizationStep } from '../../../core/models';
         >
           📡
         </div>
-        <span class="text-xs font-medium text-slate-600">Точка доступа</span>
+        <span class="text-xs font-medium text-slate-600">{{ t('pfAp') }}</span>
       </div>
 
       <div class="relative h-12 flex-1">
@@ -86,7 +87,7 @@ import type { VisualizationStep } from '../../../core/models';
           <span
             class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-slate-400"
           >
-            на этом шаге пакеты по эфиру не передаются
+            {{ t('pfIdle') }}
           </span>
         }
       </div>
@@ -100,7 +101,7 @@ import type { VisualizationStep } from '../../../core/models';
         >
           📱
         </div>
-        <span class="text-xs font-medium text-slate-600">Клиент</span>
+        <span class="text-xs font-medium text-slate-600">{{ t('pfClient') }}</span>
       </div>
     </div>
   `,
@@ -108,6 +109,8 @@ import type { VisualizationStep } from '../../../core/models';
 export class PacketFlow {
   /** Текущий шаг модуля (может не содержать пакета). */
   readonly step = input<VisualizationStep | null>(null);
+
+  protected readonly t = inject(LocaleService).t;
 
   /** Пакет текущего шага; ключ `index` заставляет анимацию перезапускаться. */
   protected readonly packets = computed(() => {

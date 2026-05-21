@@ -3,6 +3,7 @@ import { AsyncPipe } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import type { ModuleId } from '../../core/models';
+import { LocaleService } from '../../core/i18n/locale.service';
 import { StepController } from '../../core/state/step-controller.service';
 
 /**
@@ -21,7 +22,7 @@ import { StepController } from '../../core/state/step-controller.service';
         [disabled]="!(canPrev$ | async)"
         (click)="prev()"
       >
-        ← Назад
+        {{ t('cpBack') }}
       </button>
 
       <button
@@ -29,7 +30,7 @@ import { StepController } from '../../core/state/step-controller.service';
         class="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
         (click)="togglePlay()"
       >
-        {{ playing() ? '⏸ Пауза' : '▶ Авто' }}
+        {{ playing() ? t('cpPause') : t('cpPlay') }}
       </button>
 
       <button
@@ -39,7 +40,7 @@ import { StepController } from '../../core/state/step-controller.service';
         [disabled]="!(canNext$ | async)"
         (click)="next()"
       >
-        Вперёд →
+        {{ t('cpForward') }}
       </button>
 
       <select
@@ -47,9 +48,9 @@ import { StepController } from '../../core/state/step-controller.service';
         [value]="speedMs()"
         (change)="onSpeed($event)"
       >
-        <option [value]="2000">Медленно</option>
-        <option [value]="1200">Средне</option>
-        <option [value]="600">Быстро</option>
+        <option [value]="2000">{{ t('cpSlow') }}</option>
+        <option [value]="1200">{{ t('cpMed') }}</option>
+        <option [value]="600">{{ t('cpFast') }}</option>
       </select>
     </div>
   `,
@@ -61,6 +62,7 @@ export class ControlPanel {
   private readonly steps = inject(StepController);
   private readonly moduleId$ = toObservable(this.moduleId);
 
+  protected readonly t = inject(LocaleService).t;
   protected readonly canPrev$ = this.moduleId$.pipe(switchMap((m) => this.steps.canGoPrev$(m)));
   protected readonly canNext$ = this.moduleId$.pipe(switchMap((m) => this.steps.canGoNext$(m)));
   protected readonly playing = signal(false);

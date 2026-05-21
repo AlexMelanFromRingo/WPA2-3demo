@@ -1,5 +1,6 @@
-import { Component, model } from '@angular/core';
+import { Component, inject, model } from '@angular/core';
 import type { AttackType } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Переключатель типа атаки симулятора: «Через PMKID» ↔ «Через EAPOL»
@@ -17,7 +18,7 @@ import type { AttackType } from '../../../core/models';
         [class.text-slate-600]="attackType() !== 'pmkid'"
         (click)="select('pmkid')"
       >
-        Через PMKID
+        {{ t('asViaPmkid') }}
       </button>
       <button
         type="button"
@@ -27,7 +28,7 @@ import type { AttackType } from '../../../core/models';
         [class.text-slate-600]="attackType() !== 'eapol'"
         (click)="select('eapol')"
       >
-        Через EAPOL
+        {{ t('asViaEapol') }}
       </button>
     </div>
   `,
@@ -35,6 +36,8 @@ import type { AttackType } from '../../../core/models';
 export class AttackSwitch {
   /** Выбранный тип атаки (двусторонняя привязка). */
   readonly attackType = model<AttackType>('pmkid');
+
+  protected readonly t = inject(LocaleService).t;
 
   protected select(type: AttackType): void {
     this.attackType.set(type);

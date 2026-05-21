@@ -9,6 +9,7 @@ import {
 import type { ModuleId, NetworkScenario, VisualizationStep } from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
+import { LocaleService } from '../../core/i18n/locale.service';
 import { MODULE_THEORY } from '../../core/theory';
 import { ControlPanel } from '../control-panel/control-panel';
 import { PacketFlow } from '../shared/packet-flow/packet-flow';
@@ -33,17 +34,15 @@ const WPA2_STEP_COUNT = 8;
     <section>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 class="text-xl font-semibold text-slate-800">Модуль 1 — WPA2 4-Way Handshake</h2>
-          <p class="text-sm text-slate-500">
-            Как из пароля сети рождается ключ шифрования: PMK → PTK → MIC.
-          </p>
+          <h2 class="text-xl font-semibold text-slate-800">{{ t('m1Title') }}</h2>
+          <p class="text-sm text-slate-500">{{ t('m1Subtitle') }}</p>
         </div>
         <button
           type="button"
           class="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
           (click)="recompute()"
         >
-          ↻ Пересчитать ключи
+          {{ t('m1Recompute') }}
         </button>
       </div>
 
@@ -53,7 +52,7 @@ const WPA2_STEP_COUNT = 8;
 
       @if (errors().length > 0) {
         <div class="mt-4 rounded-xl border border-red-300 bg-red-50 p-4">
-          <p class="text-sm font-semibold text-red-800">Проверьте параметры сети:</p>
+          <p class="text-sm font-semibold text-red-800">{{ t('errParams') }}</p>
           <ul class="mt-1 list-disc pl-5 text-sm text-red-700">
             @for (error of errors(); track error) {
               <li>{{ error }}</li>
@@ -74,7 +73,7 @@ const WPA2_STEP_COUNT = 8;
 
           @if (computing()) {
             <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
-              ⏳ Вычисляем ключи… PBKDF2 на 4096 итераций выполняется в фоновом потоке.
+              {{ t('m1Computing') }}
             </div>
           }
 
@@ -94,6 +93,7 @@ export class HandshakeVisualizer {
 
   protected readonly moduleId = MODULE;
   protected readonly theory = MODULE_THEORY[MODULE];
+  protected readonly t = inject(LocaleService).t;
   protected readonly computing = signal(false);
   protected readonly errors = signal<readonly string[]>([]);
   protected readonly notes = signal<readonly string[]>([]);
@@ -120,7 +120,9 @@ export class HandshakeVisualizer {
 
   protected readonly progress = computed(() => {
     const total = this.steps().length;
-    return total > 0 ? `Шаг ${this.currentIndex() + 1} из ${total}` : '';
+    return total > 0
+      ? `${this.t('progStep')} ${this.currentIndex() + 1} ${this.t('progOf')} ${total}`
+      : '';
   });
 
   constructor() {

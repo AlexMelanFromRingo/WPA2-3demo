@@ -1,5 +1,6 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import type { DataFlow } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Анимированная схема перетекания данных «вход → преобразование → выход»
@@ -69,7 +70,7 @@ import type { DataFlow } from '../../../core/models';
             {{ input.label }}
           </span>
         } @empty {
-          <span class="text-xs text-slate-400">— нет входов —</span>
+          <span class="text-xs text-slate-400">{{ t('dfNoInputs') }}</span>
         }
       </div>
 
@@ -101,4 +102,6 @@ import type { DataFlow } from '../../../core/models';
 export class DataFlowDiagram {
   /** Схема потока данных текущего шага. */
   readonly flow = input.required<DataFlow>();
+
+  protected readonly t = inject(LocaleService).t;
 }

@@ -1,6 +1,7 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { formatHexDump } from '../../../core/crypto/hex';
 import type { CryptoArtifact } from '../../../core/models';
+import { LocaleService } from '../../../core/i18n/locale.service';
 
 /**
  * Просмотр промежуточных hex-дампов криптоартефактов шага (FR-006).
@@ -14,7 +15,7 @@ import type { CryptoArtifact } from '../../../core/models';
         class="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         (click)="open.set(!open())"
       >
-        <span>Hex-дамп ({{ artifacts().length }})</span>
+        <span>{{ t('hexTitle') }} ({{ artifacts().length }})</span>
         <span aria-hidden="true">{{ open() ? '▾' : '▸' }}</span>
       </button>
 
@@ -23,7 +24,7 @@ import type { CryptoArtifact } from '../../../core/models';
           @for (artifact of artifacts(); track artifact.id) {
             <div>
               <div class="text-xs font-semibold text-slate-600">
-                {{ artifact.label }} · {{ artifact.bitLength }} бит
+                {{ artifact.label }} · {{ artifact.bitLength }} {{ t('hexBits') }}
               </div>
               <pre
                 class="mt-1 overflow-x-auto rounded bg-slate-100 p-2 text-xs leading-relaxed text-slate-800"
@@ -31,7 +32,7 @@ import type { CryptoArtifact } from '../../../core/models';
               >
             </div>
           } @empty {
-            <p class="text-xs text-slate-400">Нет значений для просмотра на этом шаге.</p>
+            <p class="text-xs text-slate-400">{{ t('hexEmpty') }}</p>
           }
         </div>
       }
@@ -42,6 +43,7 @@ export class HexInspector {
   /** Артефакты текущего шага, доступные для инспекции. */
   readonly artifacts = input.required<readonly CryptoArtifact[]>();
 
+  protected readonly t = inject(LocaleService).t;
   protected readonly open = signal(false);
 
   protected dump(artifact: CryptoArtifact): string {
