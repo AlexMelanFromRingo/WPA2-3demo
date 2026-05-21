@@ -9,7 +9,7 @@ import { LocaleService } from '../../../core/i18n/locale.service';
 @Component({
   selector: 'app-theory-panel',
   template: `
-    <details class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <details class="rounded-xl border border-slate-200 bg-white shadow-sm" open>
       <summary
         class="flex cursor-pointer select-none items-center gap-2 rounded-xl px-5 py-3
                text-sm font-semibold text-slate-800 hover:bg-slate-50"

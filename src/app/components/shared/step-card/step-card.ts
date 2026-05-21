@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { animate, style, transition, trigger } from '@angular/animations';
 import type { VisualizationStep } from '../../../core/models';
 import { LocaleService } from '../../../core/i18n/locale.service';
+import { ByteGrid } from '../byte-grid/byte-grid';
 import { DataFlowDiagram } from '../data-flow-diagram/data-flow-diagram';
 import { HexInspector } from '../hex-inspector/hex-inspector';
 import { Tooltip } from '../tooltip/tooltip';
@@ -13,7 +14,7 @@ import { Tooltip } from '../tooltip/tooltip';
  */
 @Component({
   selector: 'app-step-card',
-  imports: [DataFlowDiagram, HexInspector, Tooltip],
+  imports: [ByteGrid, DataFlowDiagram, HexInspector, Tooltip],
   animations: [
     trigger('stepChange', [
       transition('* => *', [
@@ -76,6 +77,17 @@ import { Tooltip } from '../tooltip/tooltip';
           >{{ calcText() }}</pre
         >
       </div>
+
+      @if (step().byteView; as byteView) {
+        <div class="mt-4">
+          <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{
+            t('scByteView')
+          }}</span>
+          <div class="mt-2 overflow-x-auto rounded-md bg-slate-50 p-3">
+            <app-byte-grid [view]="byteView" />
+          </div>
+        </div>
+      }
 
       <div class="mt-4">
         <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{

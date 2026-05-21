@@ -38,11 +38,19 @@ export interface HashcatText {
   perWordFormulaEapol: string;
   perWordTransform: string;
   perWordInputLabel: string;
-  perWordOpPmkid: string;
-  perWordOpEapol: string;
+  perWordTerms: GlossaryTerm[];
+  /** Блок «Вычисление»: общее начало (шаг A — PBKDF2 → PMK). */
+  perWordCalcHead: string[];
+  /** Блок «Вычисление»: шаг B для атаки PMKID. */
+  perWordCalcOpPmkid: string[];
+  /** Блок «Вычисление»: шаг B для атаки EAPOL. */
+  perWordCalcOpEapol: string[];
+  /** Блок «Вычисление»: общий хвост (шаг C — сверка). */
+  perWordCalcTail: string[];
   perWordVerdictMatch: string;
   perWordVerdictNoMatch: string;
-  perWordCalc: string[];
+  perWordByteCaptionPmkid: string;
+  perWordByteCaptionEapol: string;
   badgeMatch: string;
   badgeNoMatch: string;
 
@@ -69,7 +77,7 @@ export interface HashcatText {
 
 const RU_CRACK: GlossaryTerm[] = [
   { term: 'PBKDF2', definition: 'функция, превращающая пароль в ключ PMK за 4096 повторов HMAC-SHA1. Та же, что в Модуле 1.' },
-  { term: 'PMK', definition: 'Pairwise Master Key — 256-битный ключ, получаемый из пароля и SSID.' },
+  { term: 'PMK', definition: 'Pairwise Master Key — 256-битный (32 байта) ключ, получаемый из пароля и SSID.' },
   { term: 'Хэш кандидата', definition: 'значение (PMKID или MIC), вычисленное из проверяемого слова. Его сверяют с перехваченным.' },
   { term: 'Словарь', definition: 'список слов-кандидатов на роль пароля. В реальной атаке — миллионы строк.' },
 ];
@@ -153,34 +161,83 @@ const RU: HashcatText = {
   perWordTooltipMatch: 'Хэш кандидата совпал с перехваченным — пароль найден.',
   perWordTooltipNoMatch: 'Хэш кандидата не совпал — берём следующее слово.',
   perWordDescMatch:
-    'Из слова «{word}» функцией PBKDF2 (4096 итераций) получен PMK, а из него — хэш ' +
-    'кандидата. Этот хэш совпал с перехваченным эталоном — значит, «{word}» и есть ' +
-    'пароль сети. Перебор останавливается.',
+    'Проверяем слово «{word}» как возможный пароль. Сначала функция PBKDF2 (4096 ' +
+    'повторов HMAC-SHA1) превращает слово в 32-байтный мастер-ключ PMK. Затем из PMK по ' +
+    'формуле стандарта вычисляется 16-байтный хэш-кандидат. Этот хэш побайтово ' +
+    'сравнивается с перехваченным эталоном — и здесь они СОВПАЛИ. Значит, «{word}» и ' +
+    'есть пароль сети: перебор останавливается.',
   perWordDescNoMatch:
-    'Из слова «{word}» функцией PBKDF2 (4096 итераций) получен PMK, а из него — хэш ' +
-    'кандидата. Этот хэш не совпал с эталоном — слово не подходит, берётся следующее.',
-  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(слово, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)",
+    'Проверяем слово «{word}» как возможный пароль. Сначала функция PBKDF2 (4096 ' +
+    'повторов HMAC-SHA1) превращает слово в 32-байтный мастер-ключ PMK. Затем из PMK по ' +
+    'формуле стандарта вычисляется 16-байтный хэш-кандидат. Этот хэш побайтово ' +
+    'сравнивается с перехваченным эталоном — и здесь они РАЗОШЛИСЬ хотя бы в одном ' +
+    'байте. Значит, «{word}» — не пароль; берётся следующее слово словаря.',
+  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(слово, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)[0:16]",
   perWordFormulaEapol: "MIC' = HMAC-SHA1(KCK из PBKDF2(слово, SSID), кадр EAPOL)[0:16]",
   perWordTransform: 'PBKDF2 → PMK → хэш',
   perWordInputLabel: 'слово «{word}»',
-  perWordOpPmkid: '2) PMK → HMAC-SHA1(PMK, "PMK Name"‖MAC_AP‖MAC_STA), берём 16 байт',
-  perWordOpEapol: '2) PMK → PTK → KCK → HMAC-SHA1(KCK, EAPOL), берём 16 байт',
-  perWordVerdictMatch: 'СОВПАЛО ✓ — пароль «{word}» найден!',
-  perWordVerdictNoMatch: 'не совпало — слово не подходит',
-  perWordCalc: [
+  perWordTerms: [
+    ...RU_CRACK,
+    { term: 'HMAC-SHA1', definition: 'функция-«подпись»: берёт ключ и сообщение, выдаёт РОВНО 20 байт «отпечатка». Без знания ключа подделать его нельзя.' },
+    { term: 'Конкатенация (‖)', definition: 'склейка кусков байт в один — подряд, друг за другом, без разделителей. Знак ‖ читается «приписать следом». Порядок кусков фиксирован и менять его нельзя.' },
+    { term: 'Усечение (truncation)', definition: 'обрезка результата до нужной длины. Здесь из 20 байт HMAC-SHA1 оставляют первые 16, а последние 4 отбрасывают.' },
+    { term: 'Индекс байта', definition: 'порядковый номер байта, счёт с нуля: первый байт — индекс 0, шестнадцатый — индекс 15, двадцатый — индекс 19.' },
+  ],
+  perWordCalcHead: [
     'КАНДИДАТ:  "{word}"',
     '',
-    '1) Слово → PBKDF2(слово, SSID="{ssid}", 4096)',
-    '   PMK = {pmk}',
+    'ШАГ A — из слова получаем мастер-ключ PMK',
+    '  PBKDF2-HMAC-SHA1(пароль = "{word}", соль = SSID = "{ssid}", 4096 повторов)',
+    '  PMK (32 байта) = {pmk}',
     '',
-    '{opLine}',
-    '   хэш кандидата = {hash}',
-    '',
-    '3) СВЕРКА с эталоном:',
-    '   перехвачено = {captured}',
-    '   вычислено   = {hash}',
-    '   → {verdict}',
   ],
+  perWordCalcOpPmkid: [
+    'ШАГ B — из PMK получаем PMKID',
+    '  Сначала собираем «сообщение» для HMAC. Это КОНКАТЕНАЦИЯ (‖) —',
+    '  три куска байт склеиваются подряд, без разделителей:',
+    '    «PMK Name»  = {pmkNameHex}   (8 байт, ASCII-текст)',
+    '    MAC AP      = {apMacHex}             (6 байт)',
+    '    MAC клиента = {clientMacHex}             (6 байт)',
+    '  Порядок строго такой: «PMK Name», затем MAC AP, затем MAC клиента.',
+    '  сообщение (20 байт) = {pmkNameHex}{apMacHex}{clientMacHex}',
+    '',
+    '  HMAC-SHA1(ключ = PMK, сообщение)  →  20 байт.',
+    '  PMKID — это ПЕРВЫЕ 16 байт результата (индексы 0–15);',
+    '  последние 4 байта (индексы 16–19) ОТБРАСЫВАЮТСЯ.',
+    '  Почему 16? Стандарт IEEE 802.11 определяет PMKID как 128-битное',
+    '  (т.е. 16-байтное) значение. См. байтовую диаграмму ниже.',
+    '  PMKID-кандидат = {hash}',
+    '',
+  ],
+  perWordCalcOpEapol: [
+    'ШАГ B — из PMK получаем MIC',
+    '  Сначала из PMK выводят рабочий ключ PTK (функцией PRF-512, как в',
+    '  Модуле 1), а из PTK берут первые 16 байт — это ключ KCK.',
+    '  Затем считают подпись перехваченного кадра рукопожатия:',
+    '  HMAC-SHA1(ключ = KCK, кадр EAPOL)  →  20 байт.',
+    '  MIC — это ПЕРВЫЕ 16 байт результата (индексы 0–15);',
+    '  последние 4 байта (индексы 16–19) ОТБРАСЫВАЮТСЯ.',
+    '  Почему 16? В кадре EAPOL-Key поле MIC занимает ровно 16 байт',
+    '  (IEEE 802.11). См. байтовую диаграмму ниже.',
+    '  MIC-кандидат = {hash}',
+    '',
+  ],
+  perWordCalcTail: [
+    'ШАГ C — сверка с перехваченным эталоном',
+    '  перехвачено (эталон) = {captured}',
+    '  вычислено (кандидат) = {hash}',
+    '  Сравниваем побайтово, слева направо. {verdict}',
+  ],
+  perWordVerdictMatch: 'Все 16 байт совпали → пароль «{word}» найден!',
+  perWordVerdictNoMatch: 'Уже в одном из байт расхождение → слово не подходит.',
+  perWordByteCaptionPmkid:
+    'HMAC-SHA1 всегда выдаёт 20 байт. Зелёные ячейки (индексы 0–15) — это PMKID, их ' +
+    'берут. Серые с «✕» (16–19) — отбрасывают. Размер PMKID 16 байт (128 бит) задан ' +
+    'стандартом IEEE 802.11.',
+  perWordByteCaptionEapol:
+    'HMAC-SHA1 всегда выдаёт 20 байт. Зелёные ячейки (индексы 0–15) — это MIC, их берут. ' +
+    'Серые с «✕» (16–19) — отбрасывают. Поле MIC в кадре EAPOL-Key — ровно 16 байт ' +
+    '(IEEE 802.11).',
   badgeMatch: '✓ Хэши совпали',
   badgeNoMatch: '✗ Хэши разные',
   fastTitle: 'Перебор словаря (ускоренный режим)',
@@ -238,7 +295,7 @@ const RU: HashcatText = {
 
 const UK_CRACK: GlossaryTerm[] = [
   { term: 'PBKDF2', definition: 'функція, що перетворює пароль на ключ PMK за 4096 повторів HMAC-SHA1. Та сама, що в Модулі 1.' },
-  { term: 'PMK', definition: 'Pairwise Master Key — 256-бітний ключ, отримуваний із пароля та SSID.' },
+  { term: 'PMK', definition: 'Pairwise Master Key — 256-бітний (32 байти) ключ, отримуваний із пароля та SSID.' },
   { term: 'Хеш кандидата', definition: 'значення (PMKID або MIC), обчислене з перевірюваного слова. Його звіряють із перехопленим.' },
   { term: 'Словник', definition: 'список слів-кандидатів на роль пароля. У реальній атаці — мільйони рядків.' },
 ];
@@ -322,34 +379,83 @@ const UK: HashcatText = {
   perWordTooltipMatch: 'Хеш кандидата збігся з перехопленим — пароль знайдено.',
   perWordTooltipNoMatch: 'Хеш кандидата не збігся — беремо наступне слово.',
   perWordDescMatch:
-    'Зі слова «{word}» функцією PBKDF2 (4096 ітерацій) отримано PMK, а з нього — хеш ' +
-    'кандидата. Цей хеш збігся з перехопленим еталоном — отже, «{word}» і є пароль ' +
-    'мережі. Перебір зупиняється.',
+    'Перевіряємо слово «{word}» як можливий пароль. Спершу функція PBKDF2 (4096 ' +
+    'повторів HMAC-SHA1) перетворює слово на 32-байтний майстер-ключ PMK. Потім із PMK ' +
+    'за формулою стандарту обчислюється 16-байтний хеш-кандидат. Цей хеш побайтово ' +
+    'порівнюється з перехопленим еталоном — і тут вони ЗБІГЛИСЯ. Отже, «{word}» і є ' +
+    'пароль мережі: перебір зупиняється.',
   perWordDescNoMatch:
-    'Зі слова «{word}» функцією PBKDF2 (4096 ітерацій) отримано PMK, а з нього — хеш ' +
-    'кандидата. Цей хеш не збігся з еталоном — слово не підходить, береться наступне.',
-  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(слово, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)",
+    'Перевіряємо слово «{word}» як можливий пароль. Спершу функція PBKDF2 (4096 ' +
+    'повторів HMAC-SHA1) перетворює слово на 32-байтний майстер-ключ PMK. Потім із PMK ' +
+    'за формулою стандарту обчислюється 16-байтний хеш-кандидат. Цей хеш побайтово ' +
+    'порівнюється з перехопленим еталоном — і тут вони РОЗІЙШЛИСЯ хоча б в одному ' +
+    'байті. Отже, «{word}» — не пароль; береться наступне слово словника.',
+  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(слово, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)[0:16]",
   perWordFormulaEapol: "MIC' = HMAC-SHA1(KCK із PBKDF2(слово, SSID), кадр EAPOL)[0:16]",
   perWordTransform: 'PBKDF2 → PMK → хеш',
   perWordInputLabel: 'слово «{word}»',
-  perWordOpPmkid: '2) PMK → HMAC-SHA1(PMK, "PMK Name"‖MAC_AP‖MAC_STA), беремо 16 байтів',
-  perWordOpEapol: '2) PMK → PTK → KCK → HMAC-SHA1(KCK, EAPOL), беремо 16 байтів',
-  perWordVerdictMatch: 'ЗБІГЛОСЯ ✓ — пароль «{word}» знайдено!',
-  perWordVerdictNoMatch: 'не збіглося — слово не підходить',
-  perWordCalc: [
+  perWordTerms: [
+    ...UK_CRACK,
+    { term: 'HMAC-SHA1', definition: 'функція-«підпис»: бере ключ і повідомлення, видає РІВНО 20 байтів «відбитка». Без знання ключа підробити його не можна.' },
+    { term: 'Конкатенація (‖)', definition: 'склейка шматків байтів в один — підряд, один за одним, без роздільників. Знак ‖ читається «дописати слідом». Порядок шматків фіксований і змінювати його не можна.' },
+    { term: 'Усічення (truncation)', definition: 'обрізання результату до потрібної довжини. Тут із 20 байтів HMAC-SHA1 лишають перші 16, а останні 4 відкидають.' },
+    { term: 'Індекс байта', definition: 'порядковий номер байта, лік із нуля: перший байт — індекс 0, шістнадцятий — індекс 15, двадцятий — індекс 19.' },
+  ],
+  perWordCalcHead: [
     'КАНДИДАТ:  "{word}"',
     '',
-    '1) Слово → PBKDF2(слово, SSID="{ssid}", 4096)',
-    '   PMK = {pmk}',
+    'КРОК A — зі слова отримуємо майстер-ключ PMK',
+    '  PBKDF2-HMAC-SHA1(пароль = "{word}", сіль = SSID = "{ssid}", 4096 повторів)',
+    '  PMK (32 байти) = {pmk}',
     '',
-    '{opLine}',
-    '   хеш кандидата = {hash}',
-    '',
-    '3) ЗВІРКА з еталоном:',
-    '   перехоплено = {captured}',
-    '   обчислено   = {hash}',
-    '   → {verdict}',
   ],
+  perWordCalcOpPmkid: [
+    'КРОК B — із PMK отримуємо PMKID',
+    '  Спершу збираємо «повідомлення» для HMAC. Це КОНКАТЕНАЦІЯ (‖) —',
+    '  три шматки байтів склеюються підряд, без роздільників:',
+    '    «PMK Name»  = {pmkNameHex}   (8 байтів, ASCII-текст)',
+    '    MAC AP      = {apMacHex}             (6 байтів)',
+    '    MAC клієнта = {clientMacHex}             (6 байтів)',
+    '  Порядок строго такий: «PMK Name», потім MAC AP, потім MAC клієнта.',
+    '  повідомлення (20 байтів) = {pmkNameHex}{apMacHex}{clientMacHex}',
+    '',
+    '  HMAC-SHA1(ключ = PMK, повідомлення)  →  20 байтів.',
+    '  PMKID — це ПЕРШІ 16 байтів результату (індекси 0–15);',
+    '  останні 4 байти (індекси 16–19) ВІДКИДАЮТЬСЯ.',
+    '  Чому 16? Стандарт IEEE 802.11 визначає PMKID як 128-бітне',
+    '  (тобто 16-байтне) значення. Див. байтову діаграму нижче.',
+    '  PMKID-кандидат = {hash}',
+    '',
+  ],
+  perWordCalcOpEapol: [
+    'КРОК B — із PMK отримуємо MIC',
+    '  Спершу з PMK виводять робочий ключ PTK (функцією PRF-512, як у',
+    '  Модулі 1), а з PTK беруть перші 16 байтів — це ключ KCK.',
+    '  Потім рахують підпис перехопленого кадру рукостискання:',
+    '  HMAC-SHA1(ключ = KCK, кадр EAPOL)  →  20 байтів.',
+    '  MIC — це ПЕРШІ 16 байтів результату (індекси 0–15);',
+    '  останні 4 байти (індекси 16–19) ВІДКИДАЮТЬСЯ.',
+    '  Чому 16? У кадрі EAPOL-Key поле MIC займає рівно 16 байтів',
+    '  (IEEE 802.11). Див. байтову діаграму нижче.',
+    '  MIC-кандидат = {hash}',
+    '',
+  ],
+  perWordCalcTail: [
+    'КРОК C — звірка з перехопленим еталоном',
+    '  перехоплено (еталон) = {captured}',
+    '  обчислено (кандидат) = {hash}',
+    '  Порівнюємо побайтово, зліва направо. {verdict}',
+  ],
+  perWordVerdictMatch: 'Усі 16 байтів збіглися → пароль «{word}» знайдено!',
+  perWordVerdictNoMatch: 'Уже в одному з байтів розбіжність → слово не підходить.',
+  perWordByteCaptionPmkid:
+    'HMAC-SHA1 завжди видає 20 байтів. Зелені клітинки (індекси 0–15) — це PMKID, їх ' +
+    'беруть. Сірі з «✕» (16–19) — відкидають. Розмір PMKID 16 байтів (128 бітів) задано ' +
+    'стандартом IEEE 802.11.',
+  perWordByteCaptionEapol:
+    'HMAC-SHA1 завжди видає 20 байтів. Зелені клітинки (індекси 0–15) — це MIC, їх ' +
+    'беруть. Сірі з «✕» (16–19) — відкидають. Поле MIC у кадрі EAPOL-Key — рівно 16 ' +
+    'байтів (IEEE 802.11).',
   badgeMatch: '✓ Хеші збіглися',
   badgeNoMatch: '✗ Хеші різні',
   fastTitle: 'Перебір словника (прискорений режим)',
@@ -408,7 +514,7 @@ const UK: HashcatText = {
 
 const EN_CRACK: GlossaryTerm[] = [
   { term: 'PBKDF2', definition: 'the function that turns a password into the PMK key in 4096 HMAC-SHA1 repetitions. The same one as in Module 1.' },
-  { term: 'PMK', definition: 'Pairwise Master Key — a 256-bit key derived from the password and the SSID.' },
+  { term: 'PMK', definition: 'Pairwise Master Key — a 256-bit (32-byte) key derived from the password and the SSID.' },
   { term: 'Candidate hash', definition: 'a value (PMKID or MIC) computed from the word being tested. It is compared with the captured one.' },
   { term: 'Dictionary', definition: 'a list of candidate words for the password. In a real attack — millions of lines.' },
 ];
@@ -492,35 +598,84 @@ const EN: HashcatText = {
   perWordTooltipMatch: 'The candidate hash matched the captured one — the password is found.',
   perWordTooltipNoMatch: 'The candidate hash did not match — take the next word.',
   perWordDescMatch:
-    'From the word “{word}” the function PBKDF2 (4096 iterations) produced a PMK, and from ' +
-    'it the candidate hash. This hash matched the captured reference — so “{word}” is the ' +
-    'network password. The search stops.',
+    'We test the word “{word}” as a possible password. First the function PBKDF2 (4096 ' +
+    'HMAC-SHA1 repetitions) turns the word into a 32-byte master key PMK. Then, by the ' +
+    'standard’s formula, a 16-byte candidate hash is computed from the PMK. This hash is ' +
+    'compared byte by byte with the captured reference — and here they MATCHED. So ' +
+    '“{word}” is the network password: the search stops.',
   perWordDescNoMatch:
-    'From the word “{word}” the function PBKDF2 (4096 iterations) produced a PMK, and from ' +
-    'it the candidate hash. This hash did not match the reference — the word does not fit, ' +
-    'the next one is taken.',
-  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(word, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)",
+    'We test the word “{word}” as a possible password. First the function PBKDF2 (4096 ' +
+    'HMAC-SHA1 repetitions) turns the word into a 32-byte master key PMK. Then, by the ' +
+    'standard’s formula, a 16-byte candidate hash is computed from the PMK. This hash is ' +
+    'compared byte by byte with the captured reference — and here they DIFFERED in at ' +
+    'least one byte. So “{word}” is not the password; the next dictionary word is taken.',
+  perWordFormulaPmkid: "PMKID' = HMAC-SHA1(PBKDF2(word, SSID), \"PMK Name\" ‖ MAC_AP ‖ MAC_STA)[0:16]",
   perWordFormulaEapol: "MIC' = HMAC-SHA1(KCK from PBKDF2(word, SSID), EAPOL frame)[0:16]",
   perWordTransform: 'PBKDF2 → PMK → hash',
   perWordInputLabel: 'word “{word}”',
-  perWordOpPmkid: '2) PMK → HMAC-SHA1(PMK, "PMK Name"‖MAC_AP‖MAC_STA), keep 16 bytes',
-  perWordOpEapol: '2) PMK → PTK → KCK → HMAC-SHA1(KCK, EAPOL), keep 16 bytes',
-  perWordVerdictMatch: 'MATCHED ✓ — the password “{word}” is found!',
-  perWordVerdictNoMatch: 'no match — the word does not fit',
-  perWordCalc: [
+  perWordTerms: [
+    ...EN_CRACK,
+    { term: 'HMAC-SHA1', definition: 'a “signature” function: it takes a key and a message and outputs EXACTLY 20 bytes of “fingerprint”. Without the key it cannot be forged.' },
+    { term: 'Concatenation (‖)', definition: 'gluing chunks of bytes into one — back to back, with no separators. The ‖ sign reads “append after”. The order of the chunks is fixed and must not be changed.' },
+    { term: 'Truncation', definition: 'cutting the result to the required length. Here, of the 20 bytes of HMAC-SHA1 the first 16 are kept and the last 4 are discarded.' },
+    { term: 'Byte index', definition: 'the ordinal number of a byte, counting from zero: the first byte is index 0, the sixteenth is index 15, the twentieth is index 19.' },
+  ],
+  perWordCalcHead: [
     'CANDIDATE:  "{word}"',
     '',
-    '1) Word → PBKDF2(word, SSID="{ssid}", 4096)',
-    '   PMK = {pmk}',
+    'STEP A — from the word we get the master key PMK',
+    '  PBKDF2-HMAC-SHA1(password = "{word}", salt = SSID = "{ssid}", 4096 repetitions)',
+    '  PMK (32 bytes) = {pmk}',
     '',
-    '{opLine}',
-    '   candidate hash = {hash}',
-    '',
-    '3) CHECK against the reference:',
-    '   captured = {captured}',
-    '   computed = {hash}',
-    '   → {verdict}',
   ],
+  perWordCalcOpPmkid: [
+    'STEP B — from the PMK we get the PMKID',
+    '  First we build the “message” for HMAC. This is CONCATENATION (‖) —',
+    '  three chunks of bytes glued back to back, with no separators:',
+    '    "PMK Name"  = {pmkNameHex}   (8 bytes, ASCII text)',
+    '    AP MAC      = {apMacHex}             (6 bytes)',
+    '    Client MAC  = {clientMacHex}             (6 bytes)',
+    '  The order is strictly: "PMK Name", then AP MAC, then Client MAC.',
+    '  message (20 bytes) = {pmkNameHex}{apMacHex}{clientMacHex}',
+    '',
+    '  HMAC-SHA1(key = PMK, message)  →  20 bytes.',
+    '  The PMKID is the FIRST 16 bytes of the result (indices 0–15);',
+    '  the last 4 bytes (indices 16–19) are DISCARDED.',
+    '  Why 16? The IEEE 802.11 standard defines the PMKID as a 128-bit',
+    '  (that is, 16-byte) value. See the byte diagram below.',
+    '  candidate PMKID = {hash}',
+    '',
+  ],
+  perWordCalcOpEapol: [
+    'STEP B — from the PMK we get the MIC',
+    '  First the working key PTK is derived from the PMK (by the PRF-512',
+    '  function, as in Module 1), and the first 16 bytes of the PTK are',
+    '  taken — that is the KCK key. Then the signature of the captured',
+    '  handshake frame is computed:',
+    '  HMAC-SHA1(key = KCK, EAPOL frame)  →  20 bytes.',
+    '  The MIC is the FIRST 16 bytes of the result (indices 0–15);',
+    '  the last 4 bytes (indices 16–19) are DISCARDED.',
+    '  Why 16? In the EAPOL-Key frame the MIC field is exactly 16 bytes',
+    '  (IEEE 802.11). See the byte diagram below.',
+    '  candidate MIC = {hash}',
+    '',
+  ],
+  perWordCalcTail: [
+    'STEP C — check against the captured reference',
+    '  captured (reference) = {captured}',
+    '  computed (candidate) = {hash}',
+    '  Compare byte by byte, left to right. {verdict}',
+  ],
+  perWordVerdictMatch: 'All 16 bytes matched → the password “{word}” is found!',
+  perWordVerdictNoMatch: 'Already one of the bytes differs → the word does not fit.',
+  perWordByteCaptionPmkid:
+    'HMAC-SHA1 always outputs 20 bytes. The green cells (indices 0–15) are the PMKID — ' +
+    'they are kept. The grey ones with “✕” (16–19) are discarded. The 16-byte (128-bit) ' +
+    'size of the PMKID is set by the IEEE 802.11 standard.',
+  perWordByteCaptionEapol:
+    'HMAC-SHA1 always outputs 20 bytes. The green cells (indices 0–15) are the MIC — they ' +
+    'are kept. The grey ones with “✕” (16–19) are discarded. The MIC field in the ' +
+    'EAPOL-Key frame is exactly 16 bytes (IEEE 802.11).',
   badgeMatch: '✓ Hashes match',
   badgeNoMatch: '✗ Hashes differ',
   fastTitle: 'Dictionary search (fast mode)',

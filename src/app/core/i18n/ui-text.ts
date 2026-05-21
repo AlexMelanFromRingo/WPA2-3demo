@@ -77,6 +77,7 @@ const RU = {
 
   scFormula: 'Формула',
   scCalc: 'Вычисление — что и с чем делаем, как меняются данные',
+  scByteView: 'Байтовая диаграмма — какие байты берутся',
   scFlow: 'Схема потока данных',
   scTerms: 'Разбор терминов',
 
@@ -167,6 +168,7 @@ const UK: Record<UiKey, string> = {
 
   scFormula: 'Формула',
   scCalc: 'Обчислення — що і з чим робимо, як змінюються дані',
+  scByteView: 'Байтова діаграма — які байти беруться',
   scFlow: 'Схема потоку даних',
   scTerms: 'Розбір термінів',
 
@@ -254,6 +256,7 @@ const EN: Record<UiKey, string> = {
 
   scFormula: 'Formula',
   scCalc: 'Computation — what we do with what, how the data changes',
+  scByteView: 'Byte diagram — which bytes are taken',
   scFlow: 'Data-flow diagram',
   scTerms: 'Term-by-term breakdown',
 

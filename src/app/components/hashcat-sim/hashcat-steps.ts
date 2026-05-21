@@ -4,7 +4,7 @@
  * подставляются в шаблоны блока «Вычисление».
  */
 import type { CrackResult } from '../../core/crypto/crypto-engine.service';
-import { bytesToHex, hexToBytes } from '../../core/crypto/hex';
+import { bytesToHex, hexToBytes, utf8ToBytes } from '../../core/crypto/hex';
 import { HASHCAT_TEXT } from '../../core/i18n/hashcat-text';
 import { fillCalc, interpolate } from '../../core/i18n/step-text';
 import type { Lang } from '../../core/i18n/ui-text';
@@ -101,6 +101,10 @@ export function buildHashcatSteps(
       artifacts: [],
     });
   } else {
+    const pmkNameHex = bytesToHex(utf8ToBytes('PMK Name'));
+    const apMacHex = result.apMac.replace(/:/g, '').toLowerCase();
+    const clientMacHex = result.clientMac.replace(/:/g, '').toLowerCase();
+    const opLines = isPmkid ? text.perWordCalcOpPmkid : text.perWordCalcOpEapol;
     result.perWord.forEach((candidate, i) => {
       const pmk = artifact(`pmk-${i}`, text.pmkLabel, hexToBytes(candidate.pmkHex));
       const hash = artifact(`hash-${i}`, text.hashLabel, hexToBytes(candidate.hashHex));
@@ -116,15 +120,17 @@ export function buildHashcatSteps(
           { word: candidate.word },
         ),
         formula: candidateFormula,
-        terms: text.crackTerms,
-        calc: fillCalc(text.perWordCalc, {
+        terms: text.perWordTerms,
+        calc: fillCalc([...text.perWordCalcHead, ...opLines, ...text.perWordCalcTail], {
           word: candidate.word,
           ssid: result.ssid,
           pmk: candidate.pmkHex,
           hash: candidate.hashHex,
           captured: result.capturedHashHex,
-          opLine: isPmkid ? text.perWordOpPmkid : text.perWordOpEapol,
           verdict,
+          pmkNameHex,
+          apMacHex,
+          clientMacHex,
         }),
         dataFlow: {
           inputs: [{ id: 'word', label: interpolate(text.perWordInputLabel, { word: candidate.word }) }],
@@ -132,6 +138,11 @@ export function buildHashcatSteps(
           outputs: [ref(hash)],
         },
         artifacts: [pmk, hash, captured],
+        byteView: {
+          keptHex: candidate.hashHex,
+          totalCells: 20,
+          caption: isPmkid ? text.perWordByteCaptionPmkid : text.perWordByteCaptionEapol,
+        },
         badge: candidate.match
           ? { text: text.badgeMatch, tone: 'match' }
           : { text: text.badgeNoMatch, tone: 'no-match' },

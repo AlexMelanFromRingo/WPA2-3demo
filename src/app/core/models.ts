@@ -70,6 +70,16 @@ export interface PacketCue {
   label: string;
 }
 
+/** Байтовая диаграмма — графический разбор «какие байты берутся» (как в TOTP_demo). */
+export interface ByteView {
+  /** Hex взятых (выделенных) байт. */
+  keptHex: string;
+  /** Сколько всего ячеек показать (взятые + отброшенные). */
+  totalCells: number;
+  /** Подпись-объяснение под диаграммой: что выделено и почему. */
+  caption: string;
+}
+
 /** Шаг визуализации. Поля `tooltip`, `description`, `terms`, `dataFlow` обязательны. */
 export interface VisualizationStep {
   index: number;
@@ -89,6 +99,8 @@ export interface VisualizationStep {
   calc: string[];
   dataFlow: DataFlow;
   artifacts: CryptoArtifact[];
+  /** Если задано — показывается байтовая диаграмма извлечения байт. */
+  byteView?: ByteView;
   /** Если задано — на шаге проигрывается анимация передачи пакета. */
   packet?: PacketCue;
   /** Необязательный индикатор результата шага (красный/зелёный/нейтральный). */
