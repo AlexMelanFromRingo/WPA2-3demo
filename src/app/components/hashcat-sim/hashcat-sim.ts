@@ -56,7 +56,7 @@ const MODULE: ModuleId = 'hashcat-22000';
       </div>
 
       <div class="mt-3">
-        <app-theory-panel [theory]="theory" />
+        <app-theory-panel [theory]="theory()" />
       </div>
 
       <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -110,9 +110,11 @@ export class HashcatSim {
   private readonly crypto = inject(CryptoEngineService);
   private readonly stepController = inject(StepController);
 
+  private readonly locale = inject(LocaleService);
+
   protected readonly moduleId = MODULE;
-  protected readonly theory = MODULE_THEORY[MODULE];
-  protected readonly t = inject(LocaleService).t;
+  protected readonly t = this.locale.t;
+  protected readonly theory = computed(() => MODULE_THEORY[this.locale.lang()][MODULE]);
   protected readonly attackType = signal<AttackType>('pmkid');
   protected readonly words = signal<string[]>([...DEFAULT_DICTIONARY]);
   protected readonly secretPassword = signal<string>(DEFAULT_SECRET_PASSWORD);

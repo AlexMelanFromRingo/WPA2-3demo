@@ -47,7 +47,7 @@ const WPA2_STEP_COUNT = 8;
       </div>
 
       <div class="mt-4">
-        <app-theory-panel [theory]="theory" />
+        <app-theory-panel [theory]="theory()" />
       </div>
 
       @if (errors().length > 0) {
@@ -91,9 +91,11 @@ export class HandshakeVisualizer {
   private readonly crypto = inject(CryptoEngineService);
   private readonly stepController = inject(StepController);
 
+  private readonly locale = inject(LocaleService);
+
   protected readonly moduleId = MODULE;
-  protected readonly theory = MODULE_THEORY[MODULE];
-  protected readonly t = inject(LocaleService).t;
+  protected readonly t = this.locale.t;
+  protected readonly theory = computed(() => MODULE_THEORY[this.locale.lang()][MODULE]);
   protected readonly computing = signal(false);
   protected readonly errors = signal<readonly string[]>([]);
   protected readonly notes = signal<readonly string[]>([]);
