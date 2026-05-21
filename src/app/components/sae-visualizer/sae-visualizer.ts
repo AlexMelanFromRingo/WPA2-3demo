@@ -27,7 +27,7 @@ const SAE_STEP_COUNT = 8;
   selector: 'app-sae-visualizer',
   imports: [ControlPanel, PacketFlow, StepCard, TheoryPanel],
   template: `
-    <section class="mx-auto max-w-3xl p-4 sm:p-6">
+    <section>
       <div class="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 class="text-xl font-semibold text-slate-800">Модуль 2 — WPA3 SAE (Dragonfly)</h2>
