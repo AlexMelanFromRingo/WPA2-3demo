@@ -75,6 +75,8 @@ export const THEORY_EN: Record<ModuleId, ModuleTheory> = {
       { label: 'IEEE 802.11i-2004 — WPA2 / RSN', url: 'https://en.wikipedia.org/wiki/IEEE_802.11i-2004' },
       { label: 'RFC 8018 — PKCS #5: PBKDF2', url: 'https://www.rfc-editor.org/rfc/rfc8018' },
       { label: 'RFC 2104 — HMAC', url: 'https://www.rfc-editor.org/rfc/rfc2104' },
+      { label: 'RFC 3394 — AES Key Wrap', url: 'https://www.rfc-editor.org/rfc/rfc3394' },
+      { label: 'IEEE Std 802.11-2020 — §12.7 4-Way Handshake', url: 'https://standards.ieee.org/ieee/802.11/7028/' },
       { label: 'FIPS 180-4 — Secure Hash Standard (SHA-1)', url: 'https://csrc.nist.gov/pubs/fips/180-4/upd1/final' },
     ],
   },
@@ -108,14 +110,19 @@ export const THEORY_EN: Record<ModuleId, ModuleTheory> = {
       {
         heading: 'PWE — the password as a curve point',
         body:
-          'The first SAE step is to turn the password into a PWE (Password Element), a ' +
-          'point on an elliptic curve. The modern method — Hash-to-Element (H2E) — ' +
-          'deterministically maps the password to a point using hash-to-curve per ' +
-          'RFC 9380 (the SSWU method).\n\n' +
-          'The early PWE-derivation method (“hunting and pecking” — a trial-and-error ' +
-          'search) turned out to be vulnerable to timing and cache attacks (Dragonblood, ' +
-          '2019). H2E runs in constant time and closes that gap. Knowing only the PWE ' +
-          'point, the password cannot be recovered — it is a one-way operation.',
+          'The first step of SAE is to turn the password into the PWE (Password Element), a point ' +
+          'on an elliptic curve. IEEE 802.11 defines two ways to do it, and the module lets you ' +
+          'switch between them.\n\n' +
+          'Hunting-and-Pecking (the original method): the password is hashed with a counter ' +
+          'until a candidate turns out to be the x coordinate of a curve point. The loop must ' +
+          'run a fixed minimum number of iterations (k = 40); otherwise the running time ' +
+          'reveals which attempt succeeded. Early implementations skipped this, and the ' +
+          'Dragonblood attacks (2019) recovered information about the password from timing ' +
+          'and cache side channels.\n\n' +
+          'Hash-to-Element (H2E): HKDF turns the SSID and password into two numbers, the SSWU ' +
+          'map from RFC 9380 turns each into a point, and their sum is PT; then PWE = val · PT, ' +
+          'where val depends on the MAC addresses. There is no loop and the time is constant; ' +
+          'the 6 GHz band allows H2E only. Knowing just the PWE point does not reveal the password.',
       },
       {
         heading: 'Commit, Confirm, and why capture is useless',
@@ -134,6 +141,8 @@ export const THEORY_EN: Record<ModuleId, ModuleTheory> = {
     references: [
       { label: 'RFC 7664 — Dragonfly Key Exchange (2015)', url: 'https://www.rfc-editor.org/rfc/rfc7664' },
       { label: 'RFC 9380 — Hashing to Elliptic Curves (2023)', url: 'https://www.rfc-editor.org/rfc/rfc9380' },
+      { label: 'RFC 5869 — HKDF', url: 'https://www.rfc-editor.org/rfc/rfc5869' },
+      { label: 'IEEE Std 802.11-2020 — §12.4 SAE', url: 'https://standards.ieee.org/ieee/802.11/7028/' },
       { label: 'WPA3 — Wi-Fi Alliance Security', url: 'https://www.wi-fi.org/discover-wi-fi/security' },
       { label: 'Dragonblood — attacks on WPA3 SAE (2019)', url: 'https://wpa3.mathyvanhoef.com/' },
     ],

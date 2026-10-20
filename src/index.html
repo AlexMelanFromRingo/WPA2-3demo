@@ -4,6 +4,23 @@
     <meta charset="utf-8" />
     <title>Методичка Wi-Fi: WPA2 · WPA3 · Hashcat 22000</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Интерактивная методичка по безопасности Wi-Fi: как устроены WPA2 и WPA3, 4-Way Handshake, SAE (Dragonfly), ключи, атаки и защита."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d4ed8'/%3E%3Cg fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6.8 13.6a13 13 0 0 1 18.4 0'/%3E%3Cpath d='M10 16.8a8.5 8.5 0 0 1 12 0'/%3E%3Cpath d='M13.2 20a4 4 0 0 1 5.6 0'/%3E%3C/g%3E%3Ccircle cx='16' cy='23.6' r='1.4' fill='white'/%3E%3C/svg%3E"
+    />
+    <script>
+      // Тема до старта приложения — без вспышки светлого фона (ThemeService продолжит отсюда).
+      try {
+        var saved = localStorage.getItem('wifi-demo-theme');
+        var dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <app-root></app-root>

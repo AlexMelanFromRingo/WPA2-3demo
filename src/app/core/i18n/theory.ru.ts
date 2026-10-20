@@ -71,6 +71,8 @@ export const THEORY_RU: Record<ModuleId, ModuleTheory> = {
       { label: 'IEEE 802.11i-2004 — WPA2 / RSN', url: 'https://en.wikipedia.org/wiki/IEEE_802.11i-2004' },
       { label: 'RFC 8018 — PKCS #5: PBKDF2', url: 'https://www.rfc-editor.org/rfc/rfc8018' },
       { label: 'RFC 2104 — HMAC', url: 'https://www.rfc-editor.org/rfc/rfc2104' },
+      { label: 'RFC 3394 — AES Key Wrap', url: 'https://www.rfc-editor.org/rfc/rfc3394' },
+      { label: 'IEEE Std 802.11-2020 — §12.7 4-Way Handshake', url: 'https://standards.ieee.org/ieee/802.11/7028/' },
       { label: 'FIPS 180-4 — Secure Hash Standard (SHA-1)', url: 'https://csrc.nist.gov/pubs/fips/180-4/upd1/final' },
     ],
   },
@@ -105,14 +107,18 @@ export const THEORY_RU: Record<ModuleId, ModuleTheory> = {
       {
         heading: 'PWE — пароль как точка кривой',
         body:
-          'Первый шаг SAE — превратить пароль в PWE (Password Element), точку на ' +
-          'эллиптической кривой. Современный метод — Hash-to-Element (H2E) — ' +
-          'детерминированно отображает пароль в точку с помощью hash-to-curve по RFC 9380 ' +
-          '(метод SSWU).\n\n' +
-          'Ранний метод вывода PWE («hunting and pecking» — перебор с подбором) оказался ' +
-          'уязвим к атакам по времени и кэшу (Dragonblood, 2019). H2E работает за ' +
-          'постоянное время и эту брешь закрывает. Зная только точку PWE, восстановить ' +
-          'пароль невозможно — это односторонняя операция.',
+          'Первый шаг SAE — превратить пароль в PWE (Password Element), точку на эллиптической ' +
+          'кривой. Стандарт IEEE 802.11 знает два способа, и в модуле между ними можно ' +
+          'переключаться.\n\n' +
+          'Hunting-and-Pecking («охота и клевание», исходный способ): пароль хешируется со ' +
+          'счётчиком, пока очередной кандидат не окажется координатой x точки кривой. Цикл ' +
+          'должен выполнять фиксированный минимум итераций (k = 40), иначе время работы выдаёт ' +
+          'номер удачной попытки. Ранние реализации этого не соблюдали, и атаки Dragonblood ' +
+          '(2019) извлекали из таймингов и кэша сведения о пароле.\n\n' +
+          'Hash-to-Element (H2E): из SSID и пароля через HKDF получают два числа, отображение ' +
+          'SSWU из RFC 9380 превращает каждое в точку, их сумма — PT; затем PWE = val · PT, где ' +
+          'val зависит от MAC-адресов. Цикла нет, время постоянно; в диапазоне 6 ГГц разрешён ' +
+          'только H2E. Зная одну лишь точку PWE, пароль не восстановить.',
       },
       {
         heading: 'Commit, Confirm и почему перехват бесполезен',
@@ -130,6 +136,8 @@ export const THEORY_RU: Record<ModuleId, ModuleTheory> = {
     references: [
       { label: 'RFC 7664 — Dragonfly Key Exchange (2015)', url: 'https://www.rfc-editor.org/rfc/rfc7664' },
       { label: 'RFC 9380 — Hashing to Elliptic Curves (2023)', url: 'https://www.rfc-editor.org/rfc/rfc9380' },
+      { label: 'RFC 5869 — HKDF', url: 'https://www.rfc-editor.org/rfc/rfc5869' },
+      { label: 'IEEE Std 802.11-2020 — §12.4 SAE', url: 'https://standards.ieee.org/ieee/802.11/7028/' },
       { label: 'WPA3 — Wi-Fi Alliance Security', url: 'https://www.wi-fi.org/discover-wi-fi/security' },
       { label: 'Dragonblood — атаки на WPA3 SAE (2019)', url: 'https://wpa3.mathyvanhoef.com/' },
     ],

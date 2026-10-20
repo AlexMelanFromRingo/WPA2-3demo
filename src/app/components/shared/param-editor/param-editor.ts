@@ -11,11 +11,13 @@ import { debounceTime } from 'rxjs/operators';
 @Component({
   selector: 'app-param-editor',
   template: `
-    <label class="flex flex-col gap-1">
+    <label class="flex min-w-0 flex-col gap-1">
       <span class="text-xs font-medium text-slate-600">{{ label() }}</span>
       <input
         type="text"
-        class="rounded border px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-500"
+        spellcheck="false"
+        autocomplete="off"
+        class="w-full min-w-0 rounded-md border bg-white px-2 py-1.5 font-mono text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
         [class.border-slate-300]="!error()"
         [class.border-red-400]="error()"
         [value]="value()"

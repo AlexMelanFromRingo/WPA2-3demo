@@ -143,6 +143,7 @@ const RU: HashcatText = {
     { term: 'Режим 22000', definition: 'номер режима Hashcat для паролей Wi-Fi. Объединил прежние режимы 16800 (PMKID) и 2500 (EAPOL).' },
     { term: 'Поле', definition: 'отдельная часть строки. В формате 22000 поля разделяются звёздочкой (*).' },
     { term: 'Тип (01 / 02)', definition: 'первое число после WPA*: 01 — атака через PMKID, 02 — через EAPOL.' },
+    { term: 'messagepair', definition: 'последнее поле строки EAPOL: из каких сообщений рукопожатия взяты данные. 00 — пара M1 + M2, кадр EAPOL взят из M2 (как здесь). В строке PMKID поля ANonce, EAPOL и messagepair пусты — отсюда «***» в конце.' },
   ],
   step1Transform: 'Сборка строки WPA*<тип>*<хэш>*...',
   step1Calc: [
@@ -212,7 +213,7 @@ const RU: HashcatText = {
   ],
   perWordCalcOpEapol: [
     'ШАГ B — из PMK получаем MIC',
-    '  Сначала из PMK выводят рабочий ключ PTK (функцией PRF-512, как в',
+    '  Сначала из PMK выводят рабочий ключ PTK (функцией PRF-384, как в',
     '  Модуле 1), а из PTK берут первые 16 байт — это ключ KCK.',
     '  Затем считают подпись перехваченного кадра рукопожатия:',
     '  HMAC-SHA1(ключ = KCK, кадр EAPOL)  →  20 байт.',
@@ -362,6 +363,7 @@ const UK: HashcatText = {
     { term: 'Режим 22000', definition: 'номер режиму Hashcat для паролів Wi-Fi. Об’єднав колишні режими 16800 (PMKID) і 2500 (EAPOL).' },
     { term: 'Поле', definition: 'окрема частина рядка. У форматі 22000 поля розділяються зірочкою (*).' },
     { term: 'Тип (01 / 02)', definition: 'перше число після WPA*: 01 — атака через PMKID, 02 — через EAPOL.' },
+    { term: 'messagepair', definition: 'останнє поле рядка EAPOL: з яких повідомлень рукостискання взято дані. 00 — пара M1 + M2, кадр EAPOL узято з M2 (як тут). У рядку PMKID поля ANonce, EAPOL і messagepair порожні — звідси «***» наприкінці.' },
   ],
   step1Transform: 'Збирання рядка WPA*<тип>*<хеш>*...',
   step1Calc: [
@@ -431,7 +433,7 @@ const UK: HashcatText = {
   ],
   perWordCalcOpEapol: [
     'КРОК B — із PMK отримуємо MIC',
-    '  Спершу з PMK виводять робочий ключ PTK (функцією PRF-512, як у',
+    '  Спершу з PMK виводять робочий ключ PTK (функцією PRF-384, як у',
     '  Модулі 1), а з PTK беруть перші 16 байтів — це ключ KCK.',
     '  Потім рахують підпис перехопленого кадру рукостискання:',
     '  HMAC-SHA1(ключ = KCK, кадр EAPOL)  →  20 байтів.',
@@ -582,6 +584,7 @@ const EN: HashcatText = {
     { term: 'Mode 22000', definition: 'the Hashcat mode number for Wi-Fi passwords. It merged the former modes 16800 (PMKID) and 2500 (EAPOL).' },
     { term: 'Field', definition: 'a separate part of the line. In the 22000 format fields are separated by an asterisk (*).' },
     { term: 'Type (01 / 02)', definition: 'the first number after WPA*: 01 — a PMKID attack, 02 — an EAPOL attack.' },
+    { term: 'messagepair', definition: 'the last field of an EAPOL line: which handshake messages the data came from. 00 is the M1 + M2 pair with the EAPOL frame taken from M2 (as here). In a PMKID line the ANonce, EAPOL and messagepair fields are empty — hence the trailing “***”.' },
   ],
   step1Transform: 'Building the WPA*<type>*<hash>*... line',
   step1Calc: [
@@ -651,7 +654,7 @@ const EN: HashcatText = {
   ],
   perWordCalcOpEapol: [
     'STEP B — from the PMK we get the MIC',
-    '  First the working key PTK is derived from the PMK (by the PRF-512',
+    '  First the working key PTK is derived from the PMK (by the PRF-384',
     '  function, as in Module 1), and the first 16 bytes of the PTK are',
     '  taken — that is the KCK key. Then the signature of the captured',
     '  handshake frame is computed:',

@@ -11,24 +11,9 @@
  */
 import { bytesToHex, hexToBytes, parseMac, utf8ToBytes } from './hex';
 import type { AttackType } from '../models';
-import {
-  buildEapolKeyFrame,
-  computeMic,
-  concatBytes,
-  derivePmk,
-  derivePtk,
-  hmacSha1,
-} from './wpa2';
+import { buildEapolKeyFrame, computeMic, computePmkid, derivePmk, derivePtk } from './wpa2';
 
-/** PMKID = HMAC-SHA1(PMK, "PMK Name" || AA || SPA), усечённый до 16 байт. */
-export async function computePmkid(
-  pmk: Uint8Array,
-  apMac: string,
-  clientMac: string,
-): Promise<Uint8Array> {
-  const data = concatBytes(utf8ToBytes('PMK Name'), parseMac(apMac), parseMac(clientMac));
-  return (await hmacSha1(pmk, data)).slice(0, 16);
-}
+export { computePmkid } from './wpa2';
 
 /** Параметры запуска перебора. */
 export interface CrackParams {
@@ -99,11 +84,13 @@ function build22000Line(capturedHashHex: string, params: CrackParams): string {
   const staMacHex = bytesToHex(parseMac(params.clientMac));
   const essidHex = bytesToHex(utf8ToBytes(params.ssid));
   if (params.attackType === 'pmkid') {
-    return `WPA*01*${capturedHashHex}*${apMacHex}*${staMacHex}*${essidHex}`;
+    // Пустые поля ANonce, EAPOL и MESSAGEPAIR — как в официальных примерах Hashcat.
+    return `WPA*01*${capturedHashHex}*${apMacHex}*${staMacHex}*${essidHex}***`;
   }
   const anonceHex = params.aNonce.replace(/[\s:]/g, '').toLowerCase();
   const eapolHex = bytesToHex(buildEapolKeyFrame(hexToBytes(params.sNonce)));
-  return `WPA*02*${capturedHashHex}*${apMacHex}*${staMacHex}*${essidHex}*${anonceHex}*${eapolHex}*02`;
+  // MESSAGEPAIR = 00: пара M1 + M2, EAPOL взят из M2 (рукопожатие ещё не подтверждено M3).
+  return `WPA*02*${capturedHashHex}*${apMacHex}*${staMacHex}*${essidHex}*${anonceHex}*${eapolHex}*00`;
 }
 
 /**

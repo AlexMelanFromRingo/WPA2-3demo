@@ -23,3 +23,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Playwright MCP (скриншоты при проверке вёрстки)
+/.playwright-mcp/

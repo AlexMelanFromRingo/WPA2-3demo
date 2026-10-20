@@ -85,7 +85,7 @@ import { LocaleService } from '../../../core/i18n/locale.service';
           </span>
         } @empty {
           <span
-            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-slate-400"
+            class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-max max-w-full bg-white px-2 text-center text-xs text-slate-400"
           >
             {{ t('pfIdle') }}
           </span>

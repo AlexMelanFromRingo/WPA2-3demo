@@ -2,10 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { EMPTY, merge, Subject } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
-import {
-  CryptoEngineService,
-  type Wpa2HandshakeResult,
-} from '../../core/crypto/crypto-engine.service';
+import { CryptoEngineService, type Wpa2RunResult } from '../../core/crypto/crypto-engine.service';
 import type { ModuleId, NetworkScenario, VisualizationStep } from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
@@ -15,12 +12,10 @@ import { ControlPanel } from '../control-panel/control-panel';
 import { PacketFlow } from '../shared/packet-flow/packet-flow';
 import { StepCard } from '../shared/step-card/step-card';
 import { TheoryPanel } from '../shared/theory-panel/theory-panel';
-import { buildWpa2Steps } from './wpa2-steps';
+import { buildWpa2Steps, WPA2_STEP_COUNT } from './wpa2-steps';
 import { validateScenario } from './wpa2-validation';
 
 const MODULE: ModuleId = 'wpa2-handshake';
-/** Число шагов модуля WPA2 (соответствует `buildWpa2Steps`). */
-const WPA2_STEP_COUNT = 8;
 
 /**
  * Модуль 1 — WPA2 4-Way Handshake (T023, T024).
@@ -102,7 +97,7 @@ export class HandshakeVisualizer {
 
   private readonly handshake = signal<{
     scenario: NetworkScenario;
-    result: Wpa2HandshakeResult;
+    result: Wpa2RunResult;
   } | null>(null);
 
   private readonly recomputeRequests = new Subject<void>();
@@ -139,7 +134,7 @@ export class HandshakeVisualizer {
     merge(scenario$, manualScenario$)
       .pipe(
         switchMap((scenario) => {
-          const validation = validateScenario(scenario);
+          const validation = validateScenario(scenario, this.locale.lang());
           this.errors.set(validation.errors);
           this.notes.set(validation.notes);
           if (validation.errors.length > 0) {

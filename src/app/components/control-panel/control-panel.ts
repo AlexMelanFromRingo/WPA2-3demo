@@ -45,12 +45,12 @@ import { StepController } from '../../core/state/step-controller.service';
 
       <select
         class="ml-auto rounded border border-slate-300 px-2 py-1.5 text-sm"
-        [value]="speedMs()"
+        [attr.aria-label]="t('cpSpeed')"
         (change)="onSpeed($event)"
       >
-        <option [value]="2000">{{ t('cpSlow') }}</option>
-        <option [value]="1200">{{ t('cpMed') }}</option>
-        <option [value]="600">{{ t('cpFast') }}</option>
+        <option value="2000" [selected]="speedMs() === 2000">{{ t('cpSlow') }}</option>
+        <option value="1200" [selected]="speedMs() === 1200">{{ t('cpMed') }}</option>
+        <option value="600" [selected]="speedMs() === 600">{{ t('cpFast') }}</option>
       </select>
     </div>
   `,

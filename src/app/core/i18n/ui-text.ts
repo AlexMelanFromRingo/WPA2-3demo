@@ -25,25 +25,47 @@ const RU = {
   paramClientMac: 'MAC клиента',
   paramANonce: 'ANonce (hex, 32 байта)',
   paramSNonce: 'SNonce (hex, 32 байта)',
+  paramGtk: 'GTK — групповой ключ (hex, 16 байт)',
+  paramIgtk: 'IGTK — ключ PMF (hex, 16 байт)',
   debounceNote:
     'Изменения применяются с задержкой 500 мс — тяжёлый пересчёт ключей не запускается ' +
     'на каждое нажатие клавиши.',
   tabWpa2: '1 · WPA2 Handshake',
   tabWpa3: '2 · WPA3 SAE',
   tabHashcat: '3 · Hashcat 22000',
+  tabGuide: 'Справочник',
+  docGuide: 'Справочник WPA2/WPA3',
+  appShort: 'Методичка Wi-Fi',
+  footerNote:
+    'Учебный проект: все вычисления выполняются в вашем браузере, данные никуда не ' +
+    'отправляются. Атаки только моделируются на значениях, которые вы ввели сами.',
+  navLabel: 'Разделы методички',
+  langLabel: 'Язык интерфейса',
+  gToc: 'Содержание',
+  gTocMobile: 'Содержание справочника',
+  gPlay: '▶ Показать по шагам',
+  gShowAll: '■ Показать всё',
+  gSecured: 'защищено ключами сеанса',
+  gTagCommon: 'основы',
+  gTagWpa2: 'WPA2',
+  gTagWpa3: 'WPA3',
+  gTagAttack: 'атаки',
+  gBytesShort: 'Б',
+  gToTop: '↑ К началу',
+  gTerms: 'Термины',
 
   errParams: 'Проверьте параметры сети:',
   progStep: 'Шаг',
   progOf: 'из',
 
   m1Title: 'Модуль 1 — WPA2 4-Way Handshake',
-  m1Subtitle: 'Как из пароля сети рождается ключ шифрования: PMK → PTK → MIC.',
+  m1Subtitle: 'Как из пароля сети рождаются ключи сеанса: PMK → PTK → сообщения M1–M4 → установка ключей.',
   m1Recompute: '↻ Пересчитать ключи',
   m1Computing:
     '⏳ Вычисляем ключи… PBKDF2 на 4096 итераций выполняется в фоновом потоке.',
 
   m2Title: 'Модуль 2 — WPA3 SAE (Dragonfly)',
-  m2Subtitle: 'Почему в WPA3 пароль нельзя перехватить и подобрать офлайн.',
+  m2Subtitle: 'SAE по IEEE 802.11-2020: PWE, Commit, Confirm и 4-Way Handshake — и почему пароль нельзя подобрать офлайн.',
   m2Recompute: '↻ Пересчитать обмен',
   m2Computing: '⏳ Выполняем обмен SAE на кривой P-256 — в фоновом потоке.',
   m2Converged:
@@ -71,6 +93,7 @@ const RU = {
   cpSlow: 'Медленно',
   cpMed: 'Средне',
   cpFast: 'Быстро',
+  cpSpeed: 'Скорость авто-проигрывания',
 
   tpTheory: 'Теория',
   tpSources: 'Источники и стандарты',
@@ -116,25 +139,47 @@ const UK: Record<UiKey, string> = {
   paramClientMac: 'MAC клієнта',
   paramANonce: 'ANonce (hex, 32 байти)',
   paramSNonce: 'SNonce (hex, 32 байти)',
+  paramGtk: 'GTK — груповий ключ (hex, 16 байт)',
+  paramIgtk: 'IGTK — ключ PMF (hex, 16 байт)',
   debounceNote:
     'Зміни застосовуються із затримкою 500 мс — важкий перерахунок ключів не запускається ' +
     'на кожне натискання клавіші.',
   tabWpa2: '1 · WPA2 Handshake',
   tabWpa3: '2 · WPA3 SAE',
   tabHashcat: '3 · Hashcat 22000',
+  tabGuide: 'Довідник',
+  docGuide: 'Довідник WPA2/WPA3',
+  appShort: 'Методичка Wi-Fi',
+  footerNote:
+    'Навчальний проєкт: усі обчислення виконуються у вашому браузері, дані нікуди не ' +
+    'надсилаються. Атаки лише моделюються на значеннях, які ви ввели самі.',
+  navLabel: 'Розділи методички',
+  langLabel: 'Мова інтерфейсу',
+  gToc: 'Зміст',
+  gTocMobile: 'Зміст довідника',
+  gPlay: '▶ Показати по кроках',
+  gShowAll: '■ Показати все',
+  gSecured: 'захищено ключами сеансу',
+  gTagCommon: 'основи',
+  gTagWpa2: 'WPA2',
+  gTagWpa3: 'WPA3',
+  gTagAttack: 'атаки',
+  gBytesShort: 'Б',
+  gToTop: '↑ На початок',
+  gTerms: 'Терміни',
 
   errParams: 'Перевірте параметри мережі:',
   progStep: 'Крок',
   progOf: 'з',
 
   m1Title: 'Модуль 1 — WPA2 4-Way Handshake',
-  m1Subtitle: 'Як із пароля мережі народжується ключ шифрування: PMK → PTK → MIC.',
+  m1Subtitle: 'Як із пароля мережі народжуються ключі сеансу: PMK → PTK → повідомлення M1–M4 → встановлення ключів.',
   m1Recompute: '↻ Перерахувати ключі',
   m1Computing:
     '⏳ Обчислюємо ключі… PBKDF2 на 4096 ітерацій виконується у фоновому потоці.',
 
   m2Title: 'Модуль 2 — WPA3 SAE (Dragonfly)',
-  m2Subtitle: 'Чому у WPA3 пароль не можна перехопити й підібрати офлайн.',
+  m2Subtitle: 'SAE за IEEE 802.11-2020: PWE, Commit, Confirm і 4-Way Handshake — і чому пароль не можна підібрати офлайн.',
   m2Recompute: '↻ Перерахувати обмін',
   m2Computing: '⏳ Виконуємо обмін SAE на кривій P-256 — у фоновому потоці.',
   m2Converged:
@@ -162,6 +207,7 @@ const UK: Record<UiKey, string> = {
   cpSlow: 'Повільно',
   cpMed: 'Середньо',
   cpFast: 'Швидко',
+  cpSpeed: 'Швидкість автопрогравання',
 
   tpTheory: 'Теорія',
   tpSources: 'Джерела та стандарти',
@@ -204,25 +250,47 @@ const EN: Record<UiKey, string> = {
   paramClientMac: 'Client MAC',
   paramANonce: 'ANonce (hex, 32 bytes)',
   paramSNonce: 'SNonce (hex, 32 bytes)',
+  paramGtk: 'GTK — group key (hex, 16 bytes)',
+  paramIgtk: 'IGTK — PMF key (hex, 16 bytes)',
   debounceNote:
     'Changes apply after a 500 ms delay — the heavy key recomputation does not run on ' +
     'every keystroke.',
   tabWpa2: '1 · WPA2 Handshake',
   tabWpa3: '2 · WPA3 SAE',
   tabHashcat: '3 · Hashcat 22000',
+  tabGuide: 'Guide',
+  docGuide: 'WPA2/WPA3 handbook',
+  appShort: 'Wi-Fi Guide',
+  footerNote:
+    'An educational project: all computation runs in your browser and no data leaves it. ' +
+    'Attacks are only simulated on values you entered yourself.',
+  navLabel: 'Guide sections',
+  langLabel: 'Interface language',
+  gToc: 'Contents',
+  gTocMobile: 'Guide contents',
+  gPlay: '▶ Play step by step',
+  gShowAll: '■ Show all',
+  gSecured: 'protected by session keys',
+  gTagCommon: 'basics',
+  gTagWpa2: 'WPA2',
+  gTagWpa3: 'WPA3',
+  gTagAttack: 'attacks',
+  gBytesShort: 'B',
+  gToTop: '↑ Back to top',
+  gTerms: 'Terms',
 
   errParams: 'Check the network parameters:',
   progStep: 'Step',
   progOf: 'of',
 
   m1Title: 'Module 1 — WPA2 4-Way Handshake',
-  m1Subtitle: 'How a network password becomes an encryption key: PMK → PTK → MIC.',
+  m1Subtitle: 'How a network password becomes session keys: PMK → PTK → messages M1–M4 → key installation.',
   m1Recompute: '↻ Recompute keys',
   m1Computing:
     '⏳ Computing keys… PBKDF2 with 4096 iterations runs in a background thread.',
 
   m2Title: 'Module 2 — WPA3 SAE (Dragonfly)',
-  m2Subtitle: 'Why a WPA3 password cannot be captured and cracked offline.',
+  m2Subtitle: 'SAE per IEEE 802.11-2020: PWE, Commit, Confirm and the 4-Way Handshake — and why the password cannot be cracked offline.',
   m2Recompute: '↻ Recompute exchange',
   m2Computing: '⏳ Running the SAE exchange on the P-256 curve — in a background thread.',
   m2Converged:
@@ -250,6 +318,7 @@ const EN: Record<UiKey, string> = {
   cpSlow: 'Slow',
   cpMed: 'Medium',
   cpFast: 'Fast',
+  cpSpeed: 'Auto-play speed',
 
   tpTheory: 'Theory',
   tpSources: 'Sources and standards',

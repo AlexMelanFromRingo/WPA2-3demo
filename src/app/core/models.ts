@@ -20,6 +20,10 @@ export interface NetworkScenario {
   aNonce: string;
   /** SNonce — 32 байта в hex. */
   sNonce: string;
+  /** GTK — групповой ключ (16 байт hex), точка доступа передаёт его в M3. */
+  gtk: string;
+  /** IGTK — ключ защиты широковещательных служебных кадров (PMF, 16 байт hex). */
+  igtk: string;
 }
 
 /** Локальное переопределение параметров модуля поверх общего сценария. */
@@ -182,13 +186,7 @@ export interface AttackProgress {
 // --- Протокол сообщений Web Worker (contracts/crypto-worker.contract.md) ---
 
 /** Криптооперация воркера. */
-export type CryptoOp =
-  | 'ping'
-  | 'wpa2.pmk'
-  | 'wpa2.ptk'
-  | 'wpa2.mic'
-  | 'sae.run'
-  | 'h22000.crack';
+export type CryptoOp = 'ping' | 'wpa2.run' | 'sae.run' | 'h22000.crack';
 
 /** Запрос к воркеру. `generation` — токен поколения для отмены устаревших расчётов. */
 export interface WorkerRequest {
@@ -229,4 +227,6 @@ export const DEFAULT_SCENARIO: NetworkScenario = {
   clientMac: '02:00:00:00:00:02',
   aNonce: '00'.repeat(32),
   sNonce: '11'.repeat(32),
+  gtk: '22'.repeat(16),
+  igtk: '33'.repeat(16),
 };

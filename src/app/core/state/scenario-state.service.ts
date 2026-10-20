@@ -75,6 +75,8 @@ export class ScenarioStateService {
       scenario.clientMac,
       scenario.aNonce,
       scenario.sNonce,
+      scenario.gtk,
+      scenario.igtk,
     ].join('|');
   }
 

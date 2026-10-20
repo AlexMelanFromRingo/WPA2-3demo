@@ -1,9 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { EMPTY, merge, Subject } from 'rxjs';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { combineLatest, EMPTY, merge, Subject } from 'rxjs';
 import { catchError, map, switchMap, withLatestFrom } from 'rxjs/operators';
-import { CryptoEngineService } from '../../core/crypto/crypto-engine.service';
-import type { SaeRunResult } from '../../core/crypto/sae';
+import {
+  CryptoEngineService,
+  type PweMethod,
+  type SaeRunResult,
+} from '../../core/crypto/crypto-engine.service';
+import { SAE_TEXT } from '../../core/i18n/sae-text';
 import type { ModuleId, NetworkScenario, VisualizationStep } from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
@@ -14,11 +18,9 @@ import { validateScenario } from '../handshake-visualizer/wpa2-validation';
 import { PacketFlow } from '../shared/packet-flow/packet-flow';
 import { StepCard } from '../shared/step-card/step-card';
 import { TheoryPanel } from '../shared/theory-panel/theory-panel';
-import { buildSaeSteps } from './sae-steps';
+import { buildSaeSteps, SAE_STEP_COUNT } from './sae-steps';
 
 const MODULE: ModuleId = 'wpa3-sae';
-/** Число шагов модуля SAE (соответствует `buildSaeSteps`). */
-const SAE_STEP_COUNT = 8;
 
 /**
  * Модуль 2 — WPA3 SAE (Dragonfly) (T031).
@@ -58,6 +60,29 @@ const SAE_STEP_COUNT = 8;
         </div>
       } @else {
         <div class="mt-4 flex flex-col gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <div
+              class="inline-flex rounded-lg border border-slate-300 bg-white p-0.5"
+              role="group"
+              [attr.aria-label]="'PWE'"
+            >
+              @for (option of methods; track option) {
+                <button
+                  type="button"
+                  class="rounded px-3 py-1.5 text-sm font-medium"
+                  [class.bg-sky-600]="method() === option"
+                  [class.text-white]="method() === option"
+                  [class.text-slate-600]="method() !== option"
+                  [attr.aria-pressed]="method() === option"
+                  (click)="method.set(option)"
+                >
+                  {{ saeText().methodLabel[option] }}
+                </button>
+              }
+            </div>
+            <p class="text-xs text-slate-500">{{ saeText().methodHint[method()] }}</p>
+          </div>
+
           <app-control-panel [moduleId]="moduleId" />
 
           @if (computing()) {
@@ -95,6 +120,10 @@ export class SaeVisualizer {
   protected readonly theory = computed(() => MODULE_THEORY[this.locale.lang()][MODULE]);
   protected readonly computing = signal(false);
   protected readonly errors = signal<readonly string[]>([]);
+  /** Способ вывода PWE: Hash-to-Element (по умолчанию) или Hunting-and-Pecking. */
+  protected readonly method = signal<PweMethod>('h2e');
+  protected readonly methods: readonly PweMethod[] = ['h2e', 'hnp'];
+  protected readonly saeText = computed(() => SAE_TEXT[this.locale.lang()]);
 
   private readonly exchange = signal<{
     scenario: NetworkScenario;
@@ -129,15 +158,16 @@ export class SaeVisualizer {
     this.stepController.register(MODULE, SAE_STEP_COUNT);
 
     const scenario$ = this.scenarioState.effective(MODULE);
-    const manualScenario$ = this.recomputeRequests.pipe(
-      withLatestFrom(scenario$),
-      map(([, scenario]) => scenario),
+    const inputs$ = combineLatest([scenario$, toObservable(this.method)]);
+    const manualInputs$ = this.recomputeRequests.pipe(
+      withLatestFrom(inputs$),
+      map(([, inputs]) => inputs),
     );
 
-    merge(scenario$, manualScenario$)
+    merge(inputs$, manualInputs$)
       .pipe(
-        switchMap((scenario) => {
-          const validation = validateScenario(scenario);
+        switchMap(([scenario, method]) => {
+          const validation = validateScenario(scenario, this.locale.lang());
           this.errors.set(validation.errors);
           if (validation.errors.length > 0) {
             this.exchange.set(null);
@@ -145,7 +175,7 @@ export class SaeVisualizer {
             return EMPTY;
           }
           this.computing.set(true);
-          return this.crypto.runSae(scenario).pipe(
+          return this.crypto.runSae(scenario, method).pipe(
             map((result) => ({ scenario, result })),
             catchError((err: unknown) => {
               this.errors.set([

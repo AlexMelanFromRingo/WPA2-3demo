@@ -1,34 +1,19 @@
 import { Injectable, type OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
 import type { CryptoOp, NetworkScenario, WorkerRequest, WorkerResponse } from '../models';
 import type { CrackParams, CrackResult } from './hashcat22000';
-import type { SaeRunResult } from './sae';
-import type { Pbkdf2Trace } from './wpa2';
+import type { PweMethod, SaeRunResult } from './sae';
+import type { Wpa2RunResult } from './wpa2';
 
-export type { SaeRunResult } from './sae';
+export type { SaeRunResult, PweMethod } from './sae';
 export type { CrackParams, CrackResult, CandidateResult } from './hashcat22000';
+export type { Pbkdf2Trace, Wpa2RunResult } from './wpa2';
+export type { FourWayResult, FourWayMessage } from './fourway';
 
 interface PendingHandler {
   readonly generation: number;
   readonly resolve: (value: unknown) => void;
   readonly reject: (error: Error) => void;
-}
-
-export type { Pbkdf2Trace } from './wpa2';
-
-/** Полный результат расчёта рукопожатия WPA2. */
-export interface Wpa2HandshakeResult {
-  pmk: Uint8Array;
-  /** Промежуточные значения цепочки PBKDF2 (U1, U2, U3) для трассировки. */
-  pbkdf2Trace: Pbkdf2Trace;
-  b: Uint8Array;
-  ptk: Uint8Array;
-  kck: Uint8Array;
-  kek: Uint8Array;
-  tk: Uint8Array;
-  eapolFrame: Uint8Array;
-  mic: Uint8Array;
 }
 
 /**
@@ -87,49 +72,22 @@ export class CryptoEngineService implements OnDestroy {
     return this.request<string>('ping', null);
   }
 
-  /**
-   * Полный расчёт рукопожатия WPA2: PMK → PTK → MIC.
-   * Каждый шаг — отдельная операция воркера; `switchMap` отменяет
-   * незавершённую цепочку при новой подписке (FR-009).
-   */
-  runWpa2Handshake(scenario: NetworkScenario): Observable<Wpa2HandshakeResult> {
-    return this.request<{ pmk: Uint8Array; pbkdf2Trace: Pbkdf2Trace }>('wpa2.pmk', {
-      passphrase: scenario.passphrase,
+  /** Полное рукопожатие WPA2-PSK: PBKDF2 → PTK → M1…M4 (в Web Worker). */
+  runWpa2Handshake(scenario: NetworkScenario): Observable<Wpa2RunResult> {
+    return this.request<Wpa2RunResult>('wpa2.run', {
       ssid: scenario.ssid,
-    }).pipe(
-      switchMap(({ pmk, pbkdf2Trace }) =>
-        this.request<{
-          b: Uint8Array;
-          ptk: Uint8Array;
-          kck: Uint8Array;
-          kek: Uint8Array;
-          tk: Uint8Array;
-        }>('wpa2.ptk', {
-          pmk,
-          apMac: scenario.apMac,
-          clientMac: scenario.clientMac,
-          aNonce: scenario.aNonce,
-          sNonce: scenario.sNonce,
-        }).pipe(
-          switchMap((ptk) =>
-            this.request<{ eapolFrame: Uint8Array; mic: Uint8Array }>('wpa2.mic', {
-              kck: ptk.kck,
-              sNonce: scenario.sNonce,
-            }).pipe(map((micResult) => ({ pmk, pbkdf2Trace, ...ptk, ...micResult }))),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /** Полный обмен WPA3 SAE (Dragonfly) в Web Worker. */
-  runSae(scenario: NetworkScenario): Observable<SaeRunResult> {
-    return this.request<SaeRunResult>('sae.run', {
       passphrase: scenario.passphrase,
-      ssid: scenario.ssid,
       apMac: scenario.apMac,
       clientMac: scenario.clientMac,
+      aNonce: scenario.aNonce,
+      sNonce: scenario.sNonce,
+      gtk: scenario.gtk,
     });
+  }
+
+  /** Полный обмен WPA3 SAE + 4-Way для AKM 8 (в Web Worker). */
+  runSae(scenario: NetworkScenario, method: PweMethod): Observable<SaeRunResult> {
+    return this.request<SaeRunResult>('sae.run', { ...scenario, method });
   }
 
   /** Перебор мини-словаря в симуляторе Hashcat 22000 (в Web Worker). */

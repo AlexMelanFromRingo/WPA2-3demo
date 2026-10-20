@@ -8,7 +8,12 @@ import {
   CryptoEngineService,
 } from '../../core/crypto/crypto-engine.service';
 import { DEFAULT_DICTIONARY, DEFAULT_SECRET_PASSWORD } from '../../core/crypto/h22000.vectors';
-import type { AttackType, ModuleId, VisualizationStep } from '../../core/models';
+import {
+  type AttackType,
+  DEFAULT_SCENARIO,
+  type ModuleId,
+  type VisualizationStep,
+} from '../../core/models';
 import { ScenarioStateService } from '../../core/state/scenario-state.service';
 import { StepController } from '../../core/state/step-controller.service';
 import { LocaleService } from '../../core/i18n/locale.service';
@@ -175,7 +180,10 @@ export class HashcatSim {
             clientMac: params.clientMac,
             aNonce: params.aNonce,
             sNonce: params.sNonce,
-          });
+            // GTK и IGTK симулятору не нужны — подставляем заведомо корректные значения.
+            gtk: DEFAULT_SCENARIO.gtk,
+            igtk: DEFAULT_SCENARIO.igtk,
+          }, this.locale.lang());
           const errors = [...validation.errors];
           if (params.words.length === 0) {
             errors.push(this.t('m3NoWords'));
