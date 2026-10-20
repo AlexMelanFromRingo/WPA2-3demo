@@ -1,11 +1,12 @@
 # Contract — Crypto Web Worker
 
-**Feature**: `001-wifi-security-spa` | **Date**: 2026-05-20
+**Feature**: `001-wifi-security-spa` | **Date**: 2026-05-20 (обновлено 2026-10-21)
 **Файл**: `src/app/core/crypto/crypto.worker.ts`
 
 Контракт сообщений между UI-потоком и Web Worker. Воркер изолирует все тяжёлые
 криптовычисления от UI-потока (Принцип IV конституции, research.md R2). Внутри —
-WebCrypto API (PBKDF2/HMAC/SHA) и `@noble/curves` (P-256).
+WebCrypto API (PBKDF2, HMAC, SHA-256, AES-CBC для CMAC, AES-KW) и `@noble/curves`
+(арифметика точек P-256). Алгоритмы — по IEEE 802.11-2020 (research.md R8).
 
 ## Общая форма сообщений
 
@@ -22,34 +23,42 @@ WorkerProgress = { id: string; generation: number; progress: number /* 0..1 */ }
 
 ## Операции
 
-### `op: "wpa2.pmk"`
-- **payload**: `{ passphrase: string, ssid: string }`
-- **result**: `{ pmk: Uint8Array }` — PBKDF2-HMAC-SHA1, 4096 итераций, 256 бит.
+Каждая операция считает сценарий целиком за один запрос: промежуточные точки
+кривой не пересекают границу воркера, а результат содержит только байты, числа и
+флаги (structured clone).
 
-### `op: "wpa2.ptk"`
-- **payload**: `{ pmk: Uint8Array, apMac, clientMac, aNonce, sNonce: Uint8Array }`
-- **result**: `{ ptk, kck, kek, tk: Uint8Array }` — PRF-512 + разбиение.
+### `op: "ping"`
+- **result**: `"pong"` — проверка живости воркера.
 
-### `op: "wpa2.mic"`
-- **payload**: `{ kck: Uint8Array, eapolFrame: Uint8Array }`
-- **result**: `{ mic: Uint8Array /* 16 байт */ }`
+### `op: "wpa2.run"`
+- **payload**: `{ ssid, passphrase, apMac, clientMac, aNonce, sNonce, gtk: string }`
+  (MAC — `aa:bb:cc:dd:ee:ff`, nonce и GTK — hex).
+- **result** (`Wpa2RunResult`): `{ pmk, pbkdf2Trace: { u1, u2, u3 }, pmkid,
+  fourWay: FourWayResult }` — PBKDF2-HMAC-SHA1 (4096, 256 бит), PMKID, затем
+  4-Way M1–M4 для AKM PSK: PRF-384, HMAC-SHA1-128, AES Key Wrap для Key Data M3,
+  взаимные проверки MIC и RSNE (data-model.md §9).
 
-### `op: "sae.pwe"`
-- **payload**: `{ passphrase, ssid: string, apMac, clientMac: Uint8Array }`
-- **result**: `{ pweX, pweY: Uint8Array }` — точка P-256 (hash-to-curve / H2E).
-
-### `op: "sae.commit"` / `op: "sae.confirm"`
-- **payload**: входы соответствующей фазы (см. data-model.md, цепочка SAE).
-- **result**: скаляры/точки фазы + (для confirm) `{ pmk, kck: Uint8Array }`.
+### `op: "sae.run"`
+- **payload**: `NetworkScenario & { method: "h2e" | "hnp" }` — нужны ssid,
+  passphrase, apMac, clientMac, aNonce, sNonce, gtk, igtk.
+- **result** (`SaeRunResult`, data-model.md §10): PWE выбранным способом с
+  трассировкой (итерации H&P или шаги HKDF/SSWU), Commit обеих сторон со
+  случайными rand/mask, проверки чужого Commit, k, KCK/PMK/PMKID, Confirm и их
+  взаимная проверка, затем 4-Way для AKM SAE (KDF-SHA-256, AES-128-CMAC, IGTK).
+  Каждый запуск даёт новые rand/mask — повторный вызов возвращает другой PMK при
+  том же PWE.
 
 ### `op: "h22000.crack"`
-- **payload**: `{ attackType: "pmkid"|"eapol", ssid, words: string[],
-  dump: CapturedDump, fastMode: boolean }`
-- **поведение**: для каждого слова — реальный PBKDF2 + сверка (clarify Q2);
-  периодически шлёт `WorkerProgress`; в `fastMode` прогресс реже, без покадровой
-  анимации (FR-030).
-- **result**: `{ outcome: "found"|"not-found", matchIndex: number|-1,
-  perWord: Array<{ word, pmk, derived, match }> }`
+- **payload** (`CrackParams`): `{ attackType: "pmkid"|"eapol", ssid, apMac,
+  clientMac, aNonce, sNonce, secretPassword, words: string[] }`.
+- **поведение**: перехваченный хэш считается из `secretPassword`; для каждого
+  слова — реальный PBKDF2 и PMKID или PTK → MIC по кадру M2 (clarify Q2). Перебор
+  считается целиком в воркере; режим ускоренного перебора реализован на стороне UI
+  (FR-030).
+- **result** (`CrackResult`): `{ attackType, ssid, apMac, clientMac,
+  capturedHashHex, hash22000Line, perWord: Array<{ word, pmkHex, hashHex, match }>,
+  matchIndex: number|-1, outcome: "found"|"not-found" }`; строка 22000 — в формате
+  data-model.md §7.
 
 ## Гарантии контракта
 

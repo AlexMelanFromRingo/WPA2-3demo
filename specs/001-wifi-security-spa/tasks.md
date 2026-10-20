@@ -26,7 +26,9 @@ SC-007, research.md R7). Широкие UI/E2E-тесты не генериру�
 ## Path Conventions
 
 Одностраничное приложение Angular (фронтенд), корень репозитория. Пути из
-`plan.md` → Project Structure: `src/app/core/`, `src/app/components/`, `tests/`.
+`plan.md` → Project Structure: `src/app/core/`, `src/app/components/`, `python/`.
+Векторы и тесты лежат в `src/app/core/**` (тест-раннер Angular 21 ищет спеки только
+в `src/`; каталог `tests/` не используется — см. T018).
 
 ---
 
@@ -39,7 +41,7 @@ SC-007, research.md R7). Широкие UI/E2E-тесты не генериру�
 - [X] T003 Зафиксировать точные версии зависимостей в `package.json` без `^`/`~` (Angular 21.2.12, Angular CLI/build 21.2.10, Tailwind CSS 4.3.0, `@noble/curves`/`@noble/hashes` 2.2.0, RxJS 7.8.2, TypeScript 5.9.3 — все выдержаны >7 дней), установить и закоммитить `package-lock.json` (research.md R4)
 - [X] T004 [P] Подключить Tailwind CSS v4 (CSS-first конфигурация) в `src/styles.css` и в build-конфигурацию `angular.json`
 - [X] T005 [P] Настроить строгий TypeScript и поддержку Web Worker (`tsconfig.json`, `tsconfig.worker.json`, `angular.json`)
-- [X] T006 [P] Настроить встроенный тест-раннер Angular 21 (на базе Vitest) и создать каталог `tests/vectors/`
+- [X] T006 [P] Настроить встроенный тест-раннер Angular 21 (на базе Vitest) и создать каталог `tests/vectors/` — *позже векторы перенесены в `src/` (T018)*
 
 ---
 
@@ -85,8 +87,8 @@ SC-007, research.md R7). Широкие UI/E2E-тесты не генериру�
 
 ### Implementation for User Story 1
 
-- [X] T019 [US1] Реализовать криптографию WPA2 в `src/app/core/crypto/wpa2.ts`: PMK через PBKDF2-HMAC-SHA1 (4096 итераций, 256 бит), PRF-512/PTK, разбиение на KCK/KEK/TK, MIC через HMAC-SHA1 (data-model.md — цепочка Модуля 1)
-- [X] T020 [US1] Подключить операции WPA2 (`wpa2.pmk`, `wpa2.ptk`, `wpa2.mic`) к Web Worker в `src/app/core/crypto/crypto.worker.ts` (contracts/crypto-worker)
+- [X] T019 [US1] Реализовать криптографию WPA2 в `src/app/core/crypto/wpa2.ts`: PMK через PBKDF2-HMAC-SHA1 (4096 итераций, 256 бит), PRF-512/PTK, разбиение на KCK/KEK/TK, MIC через HMAC-SHA1 (data-model.md — цепочка Модуля 1) — *переработано в T056: PRF-384, полное M1–M4*
+- [X] T020 [US1] Подключить операции WPA2 (`wpa2.pmk`, `wpa2.ptk`, `wpa2.mic`) к Web Worker в `src/app/core/crypto/crypto.worker.ts` (contracts/crypto-worker) — *заменены единой `wpa2.run` в T059*
 - [X] T021 [US1] Юнит-тесты криптографии WPA2 против векторов в `src/app/core/crypto/wpa2.spec.ts` — сверка PMK/PTK/MIC, 6/6 проходят (FR-017, SC-007)
 - [X] T022 [P] [US1] Построить модель шагов WPA2 в `src/app/components/handshake-visualizer/wpa2-steps.ts`: PMK → обмен ANonce/SNonce → сборка PTK → MIC, сообщения M1–M4; каждый шаг с обязательными `tooltip` и `dataFlow` (FR-012–016, Принципы I, II)
 - [X] T023 [US1] Создать компонент `handshake-visualizer` в `src/app/components/handshake-visualizer/`: пошаговый плеер, Angular Animations для передачи пакетов (Nonce/MAC), интеграция `control-panel` + `data-flow-diagram` + `hex-inspector` + `tooltip` (FR-012–016)
@@ -179,6 +181,54 @@ PMKID/EAPOL, пошаговая анимация брутфорса с крас�
 - [X] T048 [US3] Официальные тест-векторы RFC 9380 (Appendix J.1.1, hash-to-curve P-256) получены из репозитория CFRG и встроены в `src/app/core/crypto/sae.vectors.ts` как внешний эталон
 - [X] T049 [US3] `sae.spec.ts`: примитив hash-to-curve сверяется побайтово с официальными векторами RFC 9380 (2/2 проходят); FR-018 и SC-007 обновлены до строгой формулировки. Остаток: побайтовая сверка обёртки pwd-seed против собственных annex-векторов IEEE 802.11 — несвободный источник, вне охвата
 
+> **Заменено в Phase 8 (2026-10-21)**: T047–T049 описывают прежнюю аппроксимацию
+> (`hash_to_curve` с собственным DST). Реализация переписана по IEEE 802.11-2020, а
+> «остаток» T049 закрыт: векторы Annex J.10 получены из модульных тестов hostapd
+> (T057).
+
+---
+
+## Phase 8: Ревизия 2026-10-21 — стандарт, справочник, вёрстка
+
+**Запрос пользователя**: добавить Python-скрипты без изменений; полное объяснение
+WPA2/WPA3 на сайте; реализация по стандарту/RFC там, где скрипты упрощают;
+улучшить вёрстку (spec.md, Session 2026-10-21; research.md R8–R10).
+
+### Python-скрипты (FR-036)
+
+- [X] T053 Добавить `python/wpa2_handshake.py` и `python/wpa3_sae.py` байт-в-байт (sha256 сверены), `.gitattributes` с `python/*.py -text`, `python/README.md` с запуском и таблицей отличий от стандарта
+
+### Криптоядро по IEEE 802.11-2020 (FR-013…018, FR-031, FR-032)
+
+- [X] T054 [P] Примитивы в `src/app/core/crypto/primitives.ts`: HMAC-SHA1/SHA256, HKDF-Extract/Expand, KDF-SHA-256 (+ сырые блоки), PRF-SHA1, AES-128-CMAC на AES-CBC, AES Key Wrap/Unwrap на AES-KW
+- [X] T055 [P] Кадры в `src/app/core/crypto/eapol.ts`: поля EAPOL-Key, биты Key Information, RSNE, RSNXE (H2E), KDE (PMKID, GTK, IGTK), паддинг Key Data
+- [X] T056 4-Way Handshake в `src/app/core/crypto/fourway.ts`: M1–M4 для AKM PSK (PRF-384, HMAC-SHA1-128) и AKM SAE (KDF-SHA-256-384, AES-128-CMAC, IGTK), независимые вычисления сторон и взаимные проверки; `wpa2.ts` переведён на общий код (`runWpa2`, настоящий кадр M2 с RSNE)
+- [X] T057 SAE в `src/app/core/crypto/sae.ts`: Hunting-and-Pecking (≥ 40 итераций, маскировка пароля), Hash-to-Element (HKDF + SSWU, PT → PWE), случайные rand/mask, проверка чужого Commit, KCK/PMK/PMKID через KDF, Confirm и взаимная проверка, 4-Way для AKM SAE; векторы IEEE 802.11-2020 Annex J.10 в `sae.vectors.ts`
+- [X] T058 Строки Hashcat 22000 по официальному формату (`WPA*01*…***`, `WPA*02*…*00`) в `src/app/core/crypto/hashcat22000.ts`; PRF-384 в текстах Модуля 3; пояснение поля messagepair
+- [X] T059 Воркер и фасад: операции `wpa2.run`, `sae.run` (с `method`), `h22000.crack` в `crypto.worker.ts` и `crypto-engine.service.ts`; `CryptoOp` в `models.ts`
+- [X] T060 Тесты: `primitives.spec.ts` (RFC 4493, RFC 3394, RFC 5869, 802.11i Annex H PRF), `wpa2.spec.ts` (Annex H PBKDF2, реальные строки 22000, паритет с Python, якоря M1–M4 для PSK и SAE), `sae.spec.ts` (Annex J.10, SSWU против `@noble/curves`, сходимость, случайность, структура кадров) — вместе со `step-text.spec.ts` 43/43
+
+### Модули (FR-007, FR-013…018, FR-031, FR-032)
+
+- [X] T061 Сценарий: поля `gtk` и `igtk` в `NetworkScenario`, валидация и кэш (`models.ts`, `wpa2-validation.ts`, `scenario-state.service.ts`); сообщения валидации на трёх языках (`i18n/validation-text.ts`)
+- [X] T062 [US1] Модуль 1 — 11 шагов (`wpa2-steps.ts`, `i18n/wpa2-text.{ru,uk,en}.ts`): M1 с PMKID, блок B, PTK (PRF-384), KCK/KEK/TK, M2, проверка точкой доступа, M3 с AES Key Wrap, проверка клиентом, M4; разбор кадров по полям и байтам (`frame-view.ts`, `i18n/frame-text.ts`)
+- [X] T063 [US3] Модуль 2 — 13 шагов (`sae-steps.ts`, `i18n/sae-text.{ru,uk,en}.ts`) и переключатель H2E ↔ H&P (`sae-visualizer.ts`): PT/PWE или цикл H&P, Commit обеих сторон, проверка и k, ключи, Confirm, ассоциация и PTK, M2 с CMAC, M3/M4 с GTK и IGTK, «что видит перехватчик»
+- [X] T064 Блок «Вычисление»: выравнивание колонок по табуляции и согласование «N байт» (RU/UK) в `fillCalc` (`i18n/step-text.ts`)
+- [X] T065 Теория модулей 2 и 1 (`theory.{ru,uk,en}.ts`): H2E = HKDF + SSWU, оба способа PWE, ссылки на IEEE 802.11-2020, RFC 5869, RFC 3394; панель «Теория» по умолчанию свёрнута
+
+### Справочник (FR-033, FR-034, FR-035)
+
+- [X] T066 [P] Модель контента и инлайн-разметка (`core/guide/guide-model.ts`, `inline.ts`); компоненты `guide-page`, `guide-block`, `sequence-diagram`, `key-tree`, `frame-strip`, `rich-text` (`components/guide/`); маршрут `/guide` по умолчанию
+- [X] T067 Контент 14 глав на русском (`core/guide/guide.ru.ts`), фактическая вычитка (KRACK, GCMP-256, k = 40, RFC 7664)
+- [X] T068 [P] Переводы справочника и шагов модулей на UA и EN с проверкой структуры, плейсхолдеров и неизменяемых полей
+
+### Оболочка и вёрстка (FR-035, FR-037)
+
+- [X] T069 Оболочка (`app.ts`, `styles.css`, `index.html`): липкие вкладки с цветом протокола и горизонтальной прокруткой, панель параметров только в модулях (с GTK/IGTK), колонка модулей `max-w-4xl`, футер, `lang` документа по языку, тема без вспышки, видимый фокус, `prefers-reduced-motion`, SVG-favicon
+- [X] T070 Заголовок вкладки на языке интерфейса (`i18n/localized-title.strategy.ts`, `app.config.ts`, ключи маршрутов); исправлен пустой выбор скорости в `control-panel`; подпись «пакеты не передаются» больше не перечёркивается линией
+- [X] T071 Проверка: `npm test` 43/43, `npm run build` без предупреждений бюджетов (initial ≈ 379 kB), визуальная проверка Playwright: 375 и 1280 px, светлая и тёмная тема, UA/EN/RU
+- [X] T072 Обновить документы спецификации (spec, plan, research, data-model, contracts, quickstart, tasks, checklist) и README
+
 ---
 
 ## Dependencies & Execution Order
@@ -191,6 +241,8 @@ PMKID/EAPOL, пошаговая анимация брутфорса с крас�
 - **User Story 3 (Phase 4)**: Зависит от Foundational — независима от US1 (порядок выбран по запросу пользователя)
 - **User Story 2 (Phase 5)**: Зависит от Foundational — независима; переиспользует PMK-логику из `wpa2.ts` (T019), поэтому планируется после US1
 - **Polish (Phase 6)**: Зависит от завершения всех нужных user stories
+- **Ревизия (Phase 8)**: криптоядро (T054–T060) → модули (T061–T065); справочник
+  (T066–T068) и оболочка (T069–T070) — параллельно с криптоядром; T071–T072 — в конце
 
 ### User Story Dependencies
 

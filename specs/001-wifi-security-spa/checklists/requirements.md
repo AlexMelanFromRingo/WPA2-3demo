@@ -38,3 +38,12 @@
   vs. full cryptographic computation). A reasonable default was chosen; the user
   may refine it via `/speckit-clarify` if desired. This is documented as an
   assumption, not a `[NEEDS CLARIFICATION]` blocker.
+- Re-validated on 2026-10-21 after the revision (Session 2026-10-21 in spec.md):
+  User Story 4 (handbook), FR-031…FR-037, SC-010, SC-011 added; FR-001, FR-007,
+  FR-013…FR-018, FR-027, SC-007 and the Assumptions updated. All 16 items still
+  satisfied. Note: the new requirements quote protocol formulas from IEEE 802.11-2020
+  (KDF, SAE Commit/Confirm, EAPOL-Key fields). They describe the subject being
+  taught — what the learner must see — not how the site is built, so the
+  "no implementation details" items remain satisfied. The earlier WPA3-depth
+  assumption is resolved: full computation per the standard, checked against
+  Annex J.10.
